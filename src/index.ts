@@ -149,4 +149,76 @@ const sendP2ShTransactionByPsbt = async (value: number, address: string) => {
     console.log({ raw_tx })
 }
 
-sendP2ShTransactionByPsbt(850, accounts.alice.address)
+// sendP2ShTransactionByPsbt(850, accounts.alice.address)
+
+const createTransaction = (value: number, address: string): string => {
+    const psbt = new Psbt({ network })
+
+    psbt.addInput({
+        hash: '70c5b41cb12f96fc31428714e195202249cb0c2c19c6f6416fc7ae4c5e21baa7',
+        index: 0,
+        nonWitnessUtxo: Buffer.from('02000000017237ff97857b1feba91b3ee0d1cf2925f94ff5f65f9371a7fd4ec2ced967ac49000000006a4730440220619ebf4db784204a3730bcf70a87b32d4fa7336e61eae4308926f20f17d3f47a02206c3ac27bb2b5bd8a32627915aea8bc83b55af7211f0db2fc7f4c51c43fb957da012102c23eb1375eb0bf42377118c32e7a93fb497764f876e85153ca93783e07d13709ffffffff01102700000000000017a91431e12bedb0448b89bf3f7a3e93e368ce46eaae7b8700000000', 'hex'),
+        redeemScript: payments.p2ms({
+            m: 2,
+            pubkeys: [accounts.alice, accounts.bob, accounts.carol].map(account => Buffer.from(account.publicKey, 'hex')),
+            network
+        }).output
+    })
+
+    psbt.addOutput({
+        value,
+        address,
+    })
+
+    psbt.addOutput({
+        address: '2Mwnxqt1ryXZ1iBHE1dgc1TseQE2bR4kWFP',
+        value: 10000 - value
+    })
+
+    return psbt.toBase64()
+}
+
+const signBasePsbt = (basePsbt: string, privateKey: string): string => {
+    try {
+        const psbt = Psbt.fromBase64(basePsbt, { network })
+
+        for (let i = 0; i < psbt.inputCount; i++) psbt.signInput(i, ECPair.fromWIF(privateKey, network))
+
+        return psbt.toBase64()
+    } catch (e) {
+        throw e
+    }
+}
+
+const combineAndFinalPsbt = (signedPsbts: string[]): string => {
+    const psbt = new Psbt({ network })
+
+    const items = [...signedPsbts.map(signedPsbt => Psbt.fromBase64(signedPsbt, { network }))]
+
+    psbt.combine(...items)
+
+    psbt.finalizeAllInputs()
+
+    return psbt.extractTransaction().toHex()
+}
+
+const basePsbt = createTransaction(900, 'mi7JyT8UAG6Ksd4LJbVuX866ssomxAZAY9')
+
+console.log({ basePsbt })
+
+const alicePsbt = signBasePsbt(basePsbt, accounts.alice.privateKey)
+
+console.log({ alicePsbt })
+
+const bobPsbt = signBasePsbt(basePsbt, accounts.bob.privateKey)
+
+console.log({ bobPsbt })
+
+const carolPsbt = signBasePsbt(basePsbt, accounts.carol.privateKey)
+
+console.log({ carolPsbt })
+
+const raw_tx = combineAndFinalPsbt([alicePsbt, bobPsbt, carolPsbt])
+
+console.log({ raw_tx })
+
