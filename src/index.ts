@@ -28,10 +28,6 @@ const generateAddressP2SH = (m: number, pubkeys: string[]) => {
     return address
 }
 
-const multisigAddress = generateAddressP2SH(2, [accounts.alice, accounts.bob, accounts.carol].map(person => person.publicKey))
-
-console.log({ multisigAddress })
-
 const sendP2khTransactionByPsbt = async (value: number, fee: number, address: string) => {
     const psbt = new Psbt({ network })
 
@@ -115,3 +111,42 @@ const gatherUtxoByCombinePsbt = async (value: number, address: string) => {
 }
 
 // gatherUtxoByCombinePsbt(607400, accounts.alice.address)
+
+const sendP2ShTransactionByPsbt = async (value: number, address: string) => {
+    const multiAccounts = [accounts.alice, accounts.bob, accounts.carol]
+    const multisigAddress = generateAddressP2SH(2, multiAccounts.map(person => person.publicKey))
+
+    console.log({ multisigAddress })
+
+    const psbt = new Psbt({ network })
+
+    psbt.addInput({
+        hash: '2f460e58c74b472f2fbeda4c3548fed7d2475ec4fb520725d70c555f6a8ec999',
+        index: 0,
+        nonWitnessUtxo: Buffer.from('020000000180e844a13f94d8d8dff68a3e8816994b25e66570671583d7b074a4c790acf918000000006a4730440220373a6b80048586d1e76e6b10f697aaa137874a7217b7968671a1b63b5ccf1027022049dadd11aa22ac90774c73397d88b85a8dd7b8360f4e5aab574b8a2277fc3340012102c23eb1375eb0bf42377118c32e7a93fb497764f876e85153ca93783e07d13709ffffffff02102700000000000017a91431e12bedb0448b89bf3f7a3e93e368ce46eaae7b87b15e0100000000001976a9141c6fa80d00075917ec0cef054f29fc57fffd668e88ac00000000', 'hex'),
+        redeemScript: payments.p2ms({
+            m: 2,
+            pubkeys: multiAccounts.map(account => Buffer.from(account.publicKey, 'hex')),
+            network
+        }).output
+    })
+
+    psbt.addOutput({
+        address,
+        value
+    })
+
+    psbt.signInput(0, ECPair.fromWIF(accounts.alice.privateKey, network))
+    psbt.signInput(0, ECPair.fromWIF(accounts.bob.privateKey, network))
+    // psbt.signInput(0, ECPair.fromWIF(accounts.carol.privateKey, network))
+
+    for (let i = 0; i < psbt.inputCount; i++) console.log(`input ${i} valid ${psbt.validateSignaturesOfInput(i)}`)
+
+    psbt.finalizeAllInputs()
+
+    const raw_tx = psbt.extractTransaction().toHex()
+
+    console.log({ raw_tx })
+}
+
+sendP2ShTransactionByPsbt(850, accounts.alice.address)
