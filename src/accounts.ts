@@ -13,5 +13,14 @@ export const accounts = {
         address: 'mnw9hJ38Pq56TEZGKdGQp6wJFBQDtp4LMW',
         privateKey: 'cQhQTcdMctHhjizWphC13gwNfjfcFGqLhhTibuEo4J2QupykUL1c',
         publicKey: '02777447212c74fbace7453377950ea0943508239b98a1463bc462227cbda7fc5d'
+    },
+    dave: {
+        address: 'mxHTHCzyBFK8ZK3BXszJZQCeixtzdumht4',
+        privateKey: 'cUi8whzQVGcVEnAs5B8q39NeHr1eHg8ANrGgx5dGxw1THkZ72T8c',
+
+    },
+    emily: {
+        address: 'mruaBrQQhrsMjMxaTScfotinjMeQwMajmC',
+        privateKey: 'cW9Tp1sFim7nTRc3eQjHrnJCG9H6tATVwVxeWi3dGyqjaUspfHLR'
     }
 }
