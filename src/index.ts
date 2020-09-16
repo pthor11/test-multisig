@@ -19,7 +19,7 @@ const generateAddressP2SH = (m: number, pubkeys: string[]) => {
     const { address } = payments.p2sh({
         redeem: payments.p2ms({
             m,
-            pubkeys: pubkeys.map(pubkey => Buffer.from(pubkey, 'hex')),
+            pubkeys: pubkeys.map(pubkey => Buffer.from(pubkey, 'hex')).sort(),
             network
         }),
         network
@@ -112,7 +112,7 @@ const gatherUtxoByCombinePsbt = async (value: number, address: string) => {
 
 // gatherUtxoByCombinePsbt(607400, accounts.alice.address)
 
-const sendP2ShTransactionByPsbt = async (value: number, address: string) => {
+const sendP2ShTransactionByPsbt = async (hash: string, index: number, hex: string, voutValue: number, fee: number, value: number, address: string) => {
     const multiAccounts = [accounts.alice, accounts.bob, accounts.carol]
     const multisigAddress = generateAddressP2SH(2, multiAccounts.map(person => person.publicKey))
 
@@ -121,9 +121,9 @@ const sendP2ShTransactionByPsbt = async (value: number, address: string) => {
     const psbt = new Psbt({ network })
 
     psbt.addInput({
-        hash: '2f460e58c74b472f2fbeda4c3548fed7d2475ec4fb520725d70c555f6a8ec999',
-        index: 0,
-        nonWitnessUtxo: Buffer.from('020000000180e844a13f94d8d8dff68a3e8816994b25e66570671583d7b074a4c790acf918000000006a4730440220373a6b80048586d1e76e6b10f697aaa137874a7217b7968671a1b63b5ccf1027022049dadd11aa22ac90774c73397d88b85a8dd7b8360f4e5aab574b8a2277fc3340012102c23eb1375eb0bf42377118c32e7a93fb497764f876e85153ca93783e07d13709ffffffff02102700000000000017a91431e12bedb0448b89bf3f7a3e93e368ce46eaae7b87b15e0100000000001976a9141c6fa80d00075917ec0cef054f29fc57fffd668e88ac00000000', 'hex'),
+        hash,
+        index,
+        nonWitnessUtxo: Buffer.from(hex, 'hex'),
         redeemScript: payments.p2ms({
             m: 2,
             pubkeys: multiAccounts.map(account => Buffer.from(account.publicKey, 'hex')),
@@ -136,46 +136,77 @@ const sendP2ShTransactionByPsbt = async (value: number, address: string) => {
         value
     })
 
-    psbt.signInput(0, ECPair.fromWIF(accounts.alice.privateKey, network))
-    psbt.signInput(0, ECPair.fromWIF(accounts.bob.privateKey, network))
+    psbt.addOutput({
+        address: multisigAddress as string,
+        value: voutValue - value - fee
+    })
+
+    const toBasePsbt = psbt.toBase64()
+
+    const alicePsbt = Psbt.fromBase64(toBasePsbt, { network })
+    const bobPsbt = Psbt.fromBase64(toBasePsbt, { network })
+
+    alicePsbt.signAllInputs(ECPair.fromWIF(accounts.alice.privateKey, network))
+    bobPsbt.signAllInputs(ECPair.fromWIF(accounts.bob.privateKey, network))
     // psbt.signInput(0, ECPair.fromWIF(accounts.carol.privateKey, network))
 
-    for (let i = 0; i < psbt.inputCount; i++) console.log(`input ${i} valid ${psbt.validateSignaturesOfInput(i)}`)
+    for (let i = 0; i < psbt.inputCount; i++) console.log(`input ${i} valid: alice - ${alicePsbt.validateSignaturesOfInput(i)}, bob - ${alicePsbt.validateSignaturesOfInput(i)}`)
 
-    psbt.finalizeAllInputs()
+    const aliceBasePsbt = alicePsbt.toBase64()
+    const bobBasePsbt = bobPsbt.toBase64()
 
-    const raw_tx = psbt.extractTransaction().toHex()
+    console.log({ aliceBasePsbt, bobBasePsbt })
+
+    const aliceFinalPsbt = Psbt.fromBase64(aliceBasePsbt, { network })
+    const bobFinalPsbt = Psbt.fromBase64(bobBasePsbt, { network })
+
+    const finalPsbt = Psbt.fromBase64(toBasePsbt, { network })
+
+    finalPsbt.combine(aliceFinalPsbt, bobFinalPsbt)
+
+    finalPsbt.finalizeAllInputs()
+
+    const raw_tx = finalPsbt.extractTransaction().toHex()
 
     console.log({ raw_tx })
 }
 
-// sendP2ShTransactionByPsbt(850, accounts.alice.address)
+// sendP2ShTransactionByPsbt(9660, accounts.alice.address)
+sendP2ShTransactionByPsbt('71e21afc722f2ffdaaa24010a74d1498df9c84928f02e03ee501f7fda1cda761', 0, '01000000011dac92134efe2de49d250e882b678442bbcd34dccedfef936f7cacd31bb7ef24010000006b483045022100a6d984d962de2d8fada278392edd27b47e5a9b6d5eef4bf252532c977adb3d38022010ddb5ca84fd1beaab4c35a358ce47efe9b57b586c9aa82e08273f38898a6c490121038345ca986c02243caf8ca47470292259ab5c1e4d0df2755b65cd0fe85e755672ffffffff02a08601000000000017a91431e12bedb0448b89bf3f7a3e93e368ce46eaae7b878bdf1d01000000001976a9141944c4c00c133e1fa33c29d8800c3b4ed0d2c56188ac00000000', 100000, 400, 1000, accounts.alice.address)
+// sendP2ShTransactionByPsbt('c4eaa06d95b95a69f26897cf0853a8908860cf597e3606676565a692b6a213b6', 0, '02000000000102d94cac7a4627de18e40f5e83e237961e33ddca4286ddb75529e7309bee58fa320100000000feffffff4e02196227a6c8f6fddf751c44f5748a1dcac6217650524bfdc64bd87d287c880100000000feffffff0240420f000000000017a91431e12bedb0448b89bf3f7a3e93e368ce46eaae7b87ab9327000000000017a9148052b995b002b0467025706ec5b6f7a11d086d4f8702473044022005c3554a1908e8a1c04f445e30ca7178ad98f73f2dd78a36508435e75d2ca0600220719fa82260c2a61fce66b09b38e2bada3fccffbd84c1f6881920582e3dcb198c0121024c67391fdd9f2853ea57c57e1a23a990f8a019966c7ad350f533b47c1285505b0247304402207a342d3d838e6e2792ed1fb10fbf862aefd650f5a2c4a0c6a33ea1d6546e5d8a02204252e1e086e8600333c557fb5b53b58cd71a84f4c53ab0caf5e609b2101277db012103c31ff77b503419c1144b2536719a108083c3a6f1c72cb6788e4c123f7c5c603dd0fd1b00', 1000000, 150, 1000, accounts.alice.address)
 
-const createTransaction = (value: number, address: string): string => {
+const createTransaction = (hash: string, index: number, hex: string, voutValue: number, fee: number, value: number, address: string): string => {
+    const multiAccounts = [accounts.alice, accounts.bob, accounts.carol]
+    const multisigAddress = generateAddressP2SH(2, multiAccounts.map(person => person.publicKey))
+
+    console.log({ multisigAddress })
+
     const psbt = new Psbt({ network })
 
     psbt.addInput({
-        hash: '70c5b41cb12f96fc31428714e195202249cb0c2c19c6f6416fc7ae4c5e21baa7',
-        index: 0,
-        nonWitnessUtxo: Buffer.from('02000000017237ff97857b1feba91b3ee0d1cf2925f94ff5f65f9371a7fd4ec2ced967ac49000000006a4730440220619ebf4db784204a3730bcf70a87b32d4fa7336e61eae4308926f20f17d3f47a02206c3ac27bb2b5bd8a32627915aea8bc83b55af7211f0db2fc7f4c51c43fb957da012102c23eb1375eb0bf42377118c32e7a93fb497764f876e85153ca93783e07d13709ffffffff01102700000000000017a91431e12bedb0448b89bf3f7a3e93e368ce46eaae7b8700000000', 'hex'),
+        hash,
+        index,
+        nonWitnessUtxo: Buffer.from(hex, 'hex'),
         redeemScript: payments.p2ms({
             m: 2,
-            pubkeys: [accounts.alice, accounts.bob, accounts.carol].map(account => Buffer.from(account.publicKey, 'hex')),
+            pubkeys: multiAccounts.map(account => Buffer.from(account.publicKey, 'hex')),
             network
         }).output
     })
 
     psbt.addOutput({
-        value,
         address,
+        value
     })
 
     psbt.addOutput({
-        address: '2Mwnxqt1ryXZ1iBHE1dgc1TseQE2bR4kWFP',
-        value: 10000 - value
+        address: multisigAddress as string,
+        value: voutValue - value - fee
     })
 
-    return psbt.toBase64()
+    const toBasePsbt = psbt.toBase64()
+
+    return toBasePsbt
 }
 
 const signBasePsbt = (basePsbt: string, privateKey: string): string => {
@@ -190,8 +221,8 @@ const signBasePsbt = (basePsbt: string, privateKey: string): string => {
     }
 }
 
-const combineAndFinalPsbt = (signedPsbts: string[]): string => {
-    const psbt = new Psbt({ network })
+const combineAndFinalPsbt = (basePsbt: string, signedPsbts: string[]): string => {
+    const psbt = Psbt.fromBase64(basePsbt, { network })
 
     const items = [...signedPsbts.map(signedPsbt => Psbt.fromBase64(signedPsbt, { network }))]
 
@@ -202,7 +233,7 @@ const combineAndFinalPsbt = (signedPsbts: string[]): string => {
     return psbt.extractTransaction().toHex()
 }
 
-const basePsbt = createTransaction(900, 'mi7JyT8UAG6Ksd4LJbVuX866ssomxAZAY9')
+const basePsbt = createTransaction('c4eaa06d95b95a69f26897cf0853a8908860cf597e3606676565a692b6a213b6', 0, '02000000000102d94cac7a4627de18e40f5e83e237961e33ddca4286ddb75529e7309bee58fa320100000000feffffff4e02196227a6c8f6fddf751c44f5748a1dcac6217650524bfdc64bd87d287c880100000000feffffff0240420f000000000017a91431e12bedb0448b89bf3f7a3e93e368ce46eaae7b87ab9327000000000017a9148052b995b002b0467025706ec5b6f7a11d086d4f8702473044022005c3554a1908e8a1c04f445e30ca7178ad98f73f2dd78a36508435e75d2ca0600220719fa82260c2a61fce66b09b38e2bada3fccffbd84c1f6881920582e3dcb198c0121024c67391fdd9f2853ea57c57e1a23a990f8a019966c7ad350f533b47c1285505b0247304402207a342d3d838e6e2792ed1fb10fbf862aefd650f5a2c4a0c6a33ea1d6546e5d8a02204252e1e086e8600333c557fb5b53b58cd71a84f4c53ab0caf5e609b2101277db012103c31ff77b503419c1144b2536719a108083c3a6f1c72cb6788e4c123f7c5c603dd0fd1b00', 1000000, 370, 1000, accounts.alice.address)
 
 console.log({ basePsbt })
 
@@ -218,7 +249,6 @@ const carolPsbt = signBasePsbt(basePsbt, accounts.carol.privateKey)
 
 console.log({ carolPsbt })
 
-const raw_tx = combineAndFinalPsbt([alicePsbt, bobPsbt, carolPsbt])
+const raw_tx = combineAndFinalPsbt(basePsbt, [alicePsbt, bobPsbt])
 
 console.log({ raw_tx })
-
