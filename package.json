@@ -14,6 +14,7 @@
         "@types/bitcoinjs-lib": "^5.0.0",
         "@types/bs58": "^4.0.1",
         "@types/crypto-js": "^3.1.47",
+        "@types/dotenv": "^8.2.0",
         "@types/elliptic": "^6.4.12",
         "@types/node": "^14.10.1",
         "nodemon": "^2.0.4",
@@ -24,6 +25,7 @@
         "bitcoinjs-lib": "^5.2.0",
         "bs58": "^4.0.1",
         "crypto-js": "^4.0.0",
+        "dotenv": "^8.2.0",
         "elliptic": "^6.5.3",
         "tronweb": "^3.0.0"
     }
