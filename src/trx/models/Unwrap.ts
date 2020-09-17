@@ -7,13 +7,11 @@ export const collectionNameUnwrapEvent = 'trx.unwraps'
 export type Unwrap = {
     custodian: string
     createdAt: Date
-    updatedAt: Date
     result: any
 }
 
 export const UnwrapIndexes: IndexSpecification[] = [
     { key: { createdAt: 1 } },
-    { key: { updatedAt: 1 } },
     { key: { "result.block": 1 } },
     { key: { "result.timestamp": 1 } },
     { key: { "result.toAddress": 1 } },
@@ -30,6 +28,7 @@ export const insertUnwrapToDb = async (result: any) => {
             await session.abortTransaction()
             session.endSession()
             
+            return false
         } else {
             await db.collection(collectionNameUnwrapEvent).insertOne({
                 custodian: custodianAddress,
@@ -39,6 +38,8 @@ export const insertUnwrapToDb = async (result: any) => {
 
             await session.commitTransaction()
             session.endSession()
+
+            return true
         }
     } catch (e) {
         await session.abortTransaction()

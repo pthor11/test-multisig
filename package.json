@@ -4,6 +4,7 @@
     "description": "",
     "scripts": {
         "build": "rm -rf dist && tsc",
+        "dev:trx": "nodemon --watch 'src/**/*.ts' --exec ts-node src/trx/index.ts",
         "start:btc": "node dist/btc/index.js",
         "start:trx": "node dist/trx/index.js",
         "dep:trx": "docker-compose -f docker-compose.trx.yml up --build -d",
@@ -31,6 +32,7 @@
         "crypto-js": "^4.0.0",
         "dotenv": "^8.2.0",
         "elliptic": "^6.5.3",
+        "kafkajs": "^1.13.0",
         "mongodb": "^3.6.2",
         "tronweb": "^3.0.0"
     }

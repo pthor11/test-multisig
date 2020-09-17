@@ -15,3 +15,16 @@ export const eventServerUri = process.env.EVENT_SEVER
 export const unwrapEventName = 'UnWrap'
 export const maxEventReturnSize = 50
 export const eventRequestInterval = 10000
+
+export const KafkaConfig = {
+    brokers: process.env.KAFKA_BROKERS,
+    trxClientId: process.env.KAFKA_TRX_CLIENT_ID,
+    mechanism: process.env.KAFKA_MECHANISM,
+    username: process.env.KAFKA_USERNAME,
+    password: process.env.KAFKA_PASSWORD,
+    topicPrefix: process.env.KAFKA_TOPIC_PREFIX,
+    topics: {
+        wrap: 'wrap',
+        unwrap: 'unwrap'
+    }
+}

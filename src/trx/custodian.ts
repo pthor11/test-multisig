@@ -1,6 +1,8 @@
-import { custodianAddress, eventRequestInterval, maxEventReturnSize, unwrapEventName, wrapperAddress } from "./config"
+import { custodianAddress, eventRequestInterval, KafkaConfig, maxEventReturnSize, unwrapEventName, wrapperAddress } from "./config"
+import { producer } from "./kafka"
 import { collectionNameFingerPrint, FingerPrint, insertFingerPrintToDb } from "./models/FingerPrint"
 import { insertUnwrapToDb } from "./models/Unwrap"
+import { insertUnwrapRecordToDb } from "./models/UnwrapRecord"
 import { db } from "./mongo"
 import { tronWeb } from "./tronWeb"
 
@@ -23,7 +25,7 @@ const wrap = async (tx: string, amount: number, address: string) => {
 
 const checkUnwrapEvents = async () => {
     try {
-        const lastFingerPrint = await db.collection(collectionNameFingerPrint).findOne({ custodian: custodianAddress }, { limit: 1, sort: { updatedAt: -1 } }) as FingerPrint
+        const lastFingerPrint = await db.collection(collectionNameFingerPrint).findOne({ custodian: custodianAddress }, { limit: 1, sort: { createdAt: -1 } }) as FingerPrint
 
         // console.log({ lastFingerPrint })
 
@@ -40,7 +42,16 @@ const checkUnwrapEvents = async () => {
 
             delete result.fingerprint
 
-            if (result.transaction) await insertUnwrapToDb(result)
+            if (result.transaction) {
+                const isInserted = await insertUnwrapToDb(result)
+                if (isInserted) {
+                    const record = await producer.send({
+                        topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap : KafkaConfig.topics.unwrap,
+                        messages: [{ value: JSON.stringify({}) }]
+                    })
+                    await insertUnwrapRecordToDb(result, record)
+                }
+            }
         }
 
         setTimeout(checkUnwrapEvents, eventRequestInterval)

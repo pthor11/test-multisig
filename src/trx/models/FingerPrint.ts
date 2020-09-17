@@ -26,6 +26,7 @@ export const insertFingerPrintToDb = async (fingerprint: any) => {
             await session.abortTransaction()
             session.endSession()
             
+            return false
         } else {
             await db.collection(collectionNameFingerPrint).insertOne({
                 custodian: custodianAddress,
@@ -35,6 +36,8 @@ export const insertFingerPrintToDb = async (fingerprint: any) => {
 
             await session.commitTransaction()
             session.endSession()
+
+            return true
         }
     } catch (e) {
         await session.abortTransaction()
