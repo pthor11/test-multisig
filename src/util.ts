@@ -1,4 +1,4 @@
-import { tronWeb } from "./tronweb"
+import { tronWeb } from "./trx/tronWeb"
 
 const inspectOpReturnData = (hex: string): string => {
     // xoá opcode identifier 

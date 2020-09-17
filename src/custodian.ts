@@ -1,4 +1,4 @@
-import { tronWeb } from "./tronWeb"
+import { tronWeb } from "./trx/tronWeb"
 
 const contractAddress = ''
 
