@@ -4,6 +4,7 @@
     "description": "",
     "scripts": {
         "build": "rm -rf dist && tsc",
+        "dev:btc": "nodemon --watch 'src/**/*.ts' --exec ts-node src/btc/index.ts",
         "dev:trx": "nodemon --watch 'src/**/*.ts' --exec ts-node src/trx/index.ts",
         "start:btc": "node dist/btc/index.js",
         "start:trx": "node dist/trx/index.js",

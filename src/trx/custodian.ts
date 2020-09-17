@@ -47,7 +47,12 @@ const checkUnwrapEvents = async () => {
                 if (isInserted) {
                     const record = await producer.send({
                         topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap : KafkaConfig.topics.unwrap,
-                        messages: [{ value: JSON.stringify({}) }]
+                        messages: [{
+                            value: JSON.stringify({
+                                custodian: custodianAddress,
+                                result
+                            })
+                        }]
                     })
                     await insertUnwrapRecordToDb(result, record)
                 }
