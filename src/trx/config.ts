@@ -11,3 +11,7 @@ export const custodianPrivateKey = process.env.CUSTODIAN_PRIVATEKEY
 export const fullNodeUri = process.env.FULL_NODE
 export const solidityNodeUri = process.env.SOLIDITY_NODE
 export const eventServerUri = process.env.EVENT_SEVER
+
+export const unwrapEventName = 'UnWrap'
+export const maxEventReturnSize = 50
+export const eventRequestInterval = 10000

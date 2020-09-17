@@ -11,6 +11,7 @@ const HttpProvider = TronWeb.providers.HttpProvider
 const fullNode = new HttpProvider(fullNodeUri)
 const solidityNode = new HttpProvider(solidityNodeUri)
 const eventServer = new HttpProvider(eventServerUri)
+
 const privateKey = custodianPrivateKey
 
 const tronWeb = new TronWeb({
