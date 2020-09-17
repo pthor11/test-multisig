@@ -1,0 +1,9 @@
+version: "3.7"
+services: 
+  wrapper-trx:
+    build: 
+      context: .
+      dockerfile: Dockerfile.trx
+    restart: always
+    env_file: 
+      - .trx.env

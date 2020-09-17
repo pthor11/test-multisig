@@ -2,6 +2,8 @@ import { config } from "dotenv";
 
 config()
 
+export const mongoUri = process.env.MONGO
+
 export const wrapperAddress = process.env.WRAPPER_ADDRESS
 export const custodianAddress = process.env.CUSTODIAN_ADDRESS
 export const custodianPrivateKey = process.env.CUSTODIAN_PRIVATEKEY
