@@ -1,9 +1,9 @@
-import { db } from "./mongo"
+import { collectionNames, db } from "./mongo"
 import { producer } from "./kafka"
 import { tronWeb } from "./tronWeb"
 import { custodianAddress, eventRequestInterval, KafkaConfig, maxEventReturnSize, unwrapEventName, wrapperAddress } from "./config"
-import { collectionNameFingerPrint, FingerPrint, insertFingerPrintToDb } from "./models/FingerPrint"
-import { collectionNameUnwrapEvent, insertUnwrapToDb } from "./models/Unwrap"
+import { FingerPrint, insertFingerPrintToDb } from "./models/FingerPrint"
+import { insertUnwrapToDb } from "./models/Unwrap"
 
 const wrap = async (tx: string, amount: number, address: string) => {
     try {
@@ -24,7 +24,7 @@ const wrap = async (tx: string, amount: number, address: string) => {
 
 const checkUnwrapEvents = async () => {
     try {
-        const lastFingerPrint = await db.collection(collectionNameFingerPrint).findOne({ custodian: custodianAddress }, { limit: 1, sort: { createdAt: -1 } }) as FingerPrint
+        const lastFingerPrint = await db.collection(collectionNames.fingerprints).findOne({ custodian: custodianAddress }, { limit: 1, sort: { createdAt: -1 } }) as FingerPrint
 
         // console.log({ lastFingerPrint })
 
@@ -56,7 +56,7 @@ const checkUnwrapEvents = async () => {
                             })
                         }]
                     })
-                    await db.collection(collectionNameUnwrapEvent).updateOne({
+                    await db.collection(collectionNames.unwraps).updateOne({
                         _id: insertedId
                     }, {
                         $set: {

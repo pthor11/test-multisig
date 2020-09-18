@@ -58,7 +58,13 @@ const connectKafkaConsumer = async () => {
 
                     const data = JSON.parse(data_string)
 
-                    await consumeUnwrapEvent(data)
+                    switch (topic) {
+                        case KafkaConfig.topicPrefix ? (KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap) : KafkaConfig.topics.unwrap: 
+                            await consumeUnwrapEvent(data)
+                            break;
+                    
+                        default: throw new Error(`topic ${topic} not be implemented`)
+                    }
                 } catch (e) {
                     throw e
                 }
