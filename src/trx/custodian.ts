@@ -59,8 +59,10 @@ const checkUnwrapEvents = async () => {
                     await db.collection(collectionNameUnwrapEvent).updateOne({
                         _id: insertedId
                     }, {
-                        $push: { producers: { custodian: custodianAddress, record } },
-                        $set: { updatedAt: new Date() }
+                        $set: {
+                            producer: { custodian: custodianAddress, record },
+                            updatedAt: new Date()
+                        }
                     })
                 }
             }

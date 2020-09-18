@@ -9,7 +9,8 @@
         "start:btc": "node dist/btc/index.js",
         "start:trx": "node dist/trx/index.js",
         "dep:trx": "docker-compose -f docker-compose.trx.yml up --build -d",
-        "dep:trx:log": "docker-compose -f docker-compose.trx.yml up --build",
+        "dep:trx:node:log": "docker-compose -f docker-compose.trx.node.yml up --build",
+        "dep:trx:cluster:log": "docker-compose -f docker-compose.trx.cluster.yml up --build",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],
