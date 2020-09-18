@@ -10,7 +10,7 @@ const updateUnwrapEvent = async (transaction: string) => {
     session.startTransaction()
     try {
         const { value } = await db.collection(collectionNames.unwraps).findOneAndUpdate({ "result.transaction": transaction }, {
-            $addToSet: { "consumers.signs": btcAddress },
+            $addToSet: { "consumer.signs": btcAddress },
             $set: { updateAt: new Date() }
         }, {
             returnOriginal: true,
@@ -29,7 +29,7 @@ const updateUnwrapEvent = async (transaction: string) => {
     } catch (e) {
         await session.abortTransaction()
         session.endSession()
-        if (e === 112) return updateUnwrapEvent(transaction)
+        if (e.code === 112) return updateUnwrapEvent(transaction)
         throw e
     }
 }
@@ -48,7 +48,7 @@ export const consumeUnwrapEvent = async (data: any) => {
 
         if (!address.toOutputScript(toAddress, network)) throw new Error(`consumer received unwrap message with invalid address ${amount} for network ${network}`)
 
-        const { inputs, outputs, fee } = await selectUtxos(toAddress, amount)
+        const { inputs, outputs, fee } = await selectUtxos(multisigAddress, toAddress, amount)
 
         console.log({ inputs, outputs, fee })
 
@@ -126,9 +126,9 @@ const getFeeRate = async () => {
     }
 }
 
-const selectUtxos = async (address: string, value: number) => {
+const selectUtxos = async (fromAddress: string, toAddress: string, value: number) => {
     try {
-        let utxos: any[] = await getUtxos(address)
+        let utxos: any[] = await getUtxos(fromAddress)
 
         utxos = utxos.map(utxo => { return { txId: utxo.txid, vout: utxo.vout, value: Number(utxo.value) } })
 
@@ -136,7 +136,7 @@ const selectUtxos = async (address: string, value: number) => {
 
         const targets = [
             {
-                address,
+                address: toAddress,
                 value
             }
         ]

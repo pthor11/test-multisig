@@ -8,8 +8,11 @@
         "dev:trx": "nodemon --watch 'src/**/*.ts' --exec ts-node src/trx/index.ts",
         "start:btc": "node dist/btc/index.js",
         "start:trx": "node dist/trx/index.js",
+        "dep:btc": "docker-compose -f docker-compose.btc.yml up --build -d",
         "dep:trx": "docker-compose -f docker-compose.trx.yml up --build -d",
+        "dep:btc:node:log": "docker-compose -f docker-compose.btc.node.yml up --build",
         "dep:trx:node:log": "docker-compose -f docker-compose.trx.node.yml up --build",
+        "dep:btc:cluster:log": "docker-compose -f docker-compose.btc.cluster.yml up --build",
         "dep:trx:cluster:log": "docker-compose -f docker-compose.trx.cluster.yml up --build",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
