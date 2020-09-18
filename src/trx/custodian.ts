@@ -1,10 +1,9 @@
-import { custodianAddress, eventRequestInterval, KafkaConfig, maxEventReturnSize, unwrapEventName, wrapperAddress } from "./config"
-import { producer } from "./kafka"
-import { collectionNameFingerPrint, FingerPrint, insertFingerPrintToDb } from "./models/FingerPrint"
-import { insertUnwrapToDb } from "./models/Unwrap"
-import { insertUnwrapRecordToDb } from "./models/UnwrapRecord"
 import { db } from "./mongo"
+import { producer } from "./kafka"
 import { tronWeb } from "./tronWeb"
+import { custodianAddress, eventRequestInterval, KafkaConfig, maxEventReturnSize, unwrapEventName, wrapperAddress } from "./config"
+import { collectionNameFingerPrint, FingerPrint, insertFingerPrintToDb } from "./models/FingerPrint"
+import { collectionNameUnwrapEvent, insertUnwrapToDb } from "./models/Unwrap"
 
 const wrap = async (tx: string, amount: number, address: string) => {
     try {
@@ -35,6 +34,8 @@ const checkUnwrapEvents = async () => {
 
         const results = await tronWeb.getEventResult(wrapperAddress, options)
 
+        console.log({ results: results.length });
+
         for (const result of results) {
             // console.log({ result })
 
@@ -43,8 +44,9 @@ const checkUnwrapEvents = async () => {
             delete result.fingerprint
 
             if (result.transaction) {
-                const isInserted = await insertUnwrapToDb(result)
-                if (isInserted) {
+                const insertedId = await insertUnwrapToDb(result)
+
+                if (insertedId) {
                     const record = await producer.send({
                         topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap : KafkaConfig.topics.unwrap,
                         messages: [{
@@ -54,7 +56,12 @@ const checkUnwrapEvents = async () => {
                             })
                         }]
                     })
-                    await insertUnwrapRecordToDb(result, record)
+                    await db.collection(collectionNameUnwrapEvent).updateOne({
+                        _id: insertedId
+                    }, {
+                        $push: { producers: { custodian: custodianAddress, record } },
+                        $set: { updatedAt: new Date() }
+                    })
                 }
             }
         }
