@@ -1,5 +1,6 @@
 import { Kafka, SASLMechanism } from "kafkajs";
 import { KafkaConfig } from "./config";
+import { consumeUnwrapEvent } from "./consumeUnwrapEvent";
 
 const kafka = new Kafka({
     clientId: KafkaConfig.btcClientId,
@@ -49,11 +50,15 @@ const connectKafkaConsumer = async () => {
         await consumer.run({
             eachMessage: async ({ topic, partition, message }) => {
                 try {
-                    console.log({ topic, partition })
-
                     const data_string = message.value?.toString()
 
                     console.log({ data_string })
+
+                    if (!data_string) throw new Error(`consumer receive message null value`)
+
+                    const data = JSON.parse(data_string)
+
+                    await consumeUnwrapEvent(data)
                 } catch (e) {
                     throw e
                 }

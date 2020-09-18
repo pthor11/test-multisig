@@ -1,8 +1,6 @@
 import { RecordMetadata } from "kafkajs"
 import { IndexSpecification, ObjectID } from "mongodb"
-import { client, db } from "../mongo"
-
-export const collectionNameUnwrapEvent = 'trx.unwraps'
+import { client, collectionNames, db } from "../mongo"
 
 export type Unwrap = {
     createdAt: Date
@@ -27,7 +25,7 @@ export const insertUnwrapToDb = async (result: any): Promise<ObjectID | null> =>
     const session = client.startSession()
     session.startTransaction()
     try {
-        const doc = await db.collection(collectionNameUnwrapEvent).findOne({ "result.transaction": result.transaction }, { session })
+        const doc = await db.collection(collectionNames.unwraps).findOne({ "result.transaction": result.transaction }, { session })
 
         if (doc) {
             await session.abortTransaction()
@@ -35,7 +33,7 @@ export const insertUnwrapToDb = async (result: any): Promise<ObjectID | null> =>
 
             return null
         } else {
-            const { insertedId } = await db.collection(collectionNameUnwrapEvent).insertOne({
+            const { insertedId } = await db.collection(collectionNames.unwraps).insertOne({
                 result,
                 createdAt: new Date()
             }, { session })

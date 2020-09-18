@@ -1,18 +1,15 @@
-import { connect, Db, IndexSpecification, MongoClient } from "mongodb";
+import { connect, Db, MongoClient } from "mongodb";
 import { mongoUri } from "./config";
-import { FingerPrintIndexes } from "./models/FingerPrint";
-import { UnwrapIndexes } from "./models/Unwrap";
 
 export let client: MongoClient
 export let db: Db
 
 export const collectionNames = {
-    unwraps: 'event.unwraps',
-    fingerprints: 'trx.fingerprints'
+    unwraps: 'event.unwraps'
 }
 
 export const connectDb = async () => {
-    if (!mongoUri) throw new Error(`TRX: mongo uri must be provided`)
+    if (!mongoUri) throw new Error(`BTC: mongo uri must be provided`)
 
     try {
         client = await connect(mongoUri, {
@@ -52,8 +49,8 @@ export const connectDb = async () => {
         db = client.db()
 
         await Promise.all([
-            db.collection(collectionNames.fingerprints).createIndexes(FingerPrintIndexes),
-            db.collection(collectionNames.unwraps).createIndexes(UnwrapIndexes)
+            // db.collection(collectionNameFingerPrint).createIndexes(FingerPrintIndexes),
+            // db.collection(collectionNameUnwrapEvent).createIndexes(UnwrapIndexes)
         ])
 
         console.log(`Mongodb: connected`)

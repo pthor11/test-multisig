@@ -1,8 +1,6 @@
 import { IndexSpecification } from "mongodb"
 import { custodianAddress } from "../config"
-import { client, db } from "../mongo"
-
-export const collectionNameFingerPrint = 'trx.fingerprints'
+import { client, collectionNames, db } from "../mongo"
 
 export type FingerPrint = {
     custodian: string
@@ -20,7 +18,7 @@ export const insertFingerPrintToDb = async (fingerprint: any) => {
     const session = client.startSession()
     session.startTransaction()
     try {
-        const doc = await db.collection(collectionNameFingerPrint).findOne({ custodian: custodianAddress, fingerprint }, { session })
+        const doc = await db.collection(collectionNames.fingerprints).findOne({ custodian: custodianAddress, fingerprint }, { session })
 
         if (doc) {
             await session.abortTransaction()
@@ -28,7 +26,7 @@ export const insertFingerPrintToDb = async (fingerprint: any) => {
             
             return false
         } else {
-            await db.collection(collectionNameFingerPrint).insertOne({
+            await db.collection(collectionNames.fingerprints).insertOne({
                 custodian: custodianAddress,
                 fingerprint,
                 createdAt: new Date()
