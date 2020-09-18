@@ -1,4 +1,4 @@
-import { connectKafkaConsumer } from "./kafka"
+import { connectKafkaConsumer, connectKafkaProducer } from "./kafka"
 import { connectDb } from "./mongo"
 
 const start = async() => {
@@ -6,6 +6,7 @@ const start = async() => {
         await connectDb()
         
         await connectKafkaConsumer()
+        await connectKafkaProducer()
 
     } catch (e) {
         throw e

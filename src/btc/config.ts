@@ -43,6 +43,7 @@ export const KafkaConfig = {
     topicPrefix: process.env.KAFKA_TOPIC_PREFIX,
     topics: {
         wrap: 'wrap',
-        unwrap: 'unwrap'
+        unwrap: 'unwrap',
+        sign: 'sign'
     }
 }

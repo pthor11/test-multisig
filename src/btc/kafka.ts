@@ -15,21 +15,21 @@ const kafka = new Kafka({
     requestTimeout: 60000,
 })
 
-// const producer = kafka.producer()
+const producer = kafka.producer()
 
-// producer.on("producer.disconnect", () => console.error(`Kafka: producer disconnected`))
-// producer.on("producer.network.request_timeout", () => console.error(`Kafka: producer request timeout`))
+producer.on("producer.disconnect", () => console.error(`Kafka: producer disconnected`))
+producer.on("producer.network.request_timeout", () => console.error(`Kafka: producer request timeout`))
 
-// export const connectKafkaProducer = async () => {
-//     try {
-//         await producer.connect()
+const connectKafkaProducer = async () => {
+    try {
+        await producer.connect()
 
-//         console.log(`Kafka: producer connected`)
-//     } catch (e) {
-//         console.error(`Kafka: producer disconnected`)
-//         throw e
-//     }
-// }
+        console.log(`Kafka: producer connected`)
+    } catch (e) {
+        console.error(`Kafka: producer disconnected`)
+        throw e
+    }
+}
 
 if (!KafkaConfig.btcGroupId) throw new Error(`BTC: consumer groupId must be provided`)
 
@@ -59,10 +59,10 @@ const connectKafkaConsumer = async () => {
                     const data = JSON.parse(data_string)
 
                     switch (topic) {
-                        case KafkaConfig.topicPrefix ? (KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap) : KafkaConfig.topics.unwrap: 
+                        case KafkaConfig.topicPrefix ? (KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap) : KafkaConfig.topics.unwrap:
                             await consumeUnwrapEvent(data)
                             break;
-                    
+
                         default: throw new Error(`topic ${topic} not be implemented`)
                     }
                 } catch (e) {
@@ -76,4 +76,4 @@ const connectKafkaConsumer = async () => {
 }
 
 
-export { /* producer */ consumer, connectKafkaConsumer }
+export { producer, consumer, connectKafkaProducer, connectKafkaConsumer }
