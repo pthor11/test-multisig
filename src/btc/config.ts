@@ -24,6 +24,7 @@ export const blockbookMethods = {
     tx: 'tx',
     utxo: 'utxo',
     sendtx: 'sendtx',
+    address: 'address',
     estimatefee: 'estimatefee',
 }
 

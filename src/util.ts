@@ -8,11 +8,11 @@ const inspectOpReturnData = (hex: string): string => {
 }
 
 
-const inpectTrxAddressInOpReturnData = (hex: string): boolean => {
+const inspectTrxAddressInOpReturnData = (hex: string): boolean => {
     const msg: string = inspectOpReturnData(hex)
     console.log({ msg });
 
     return tronWeb.isAddress(msg)
 }
 
-export { inpectTrxAddressInOpReturnData }
+export { inspectOpReturnData, inspectTrxAddressInOpReturnData }
