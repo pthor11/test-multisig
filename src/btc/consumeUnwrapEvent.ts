@@ -4,6 +4,7 @@ import { payments, Psbt, address, ECPair } from "bitcoinjs-lib";
 import { blockbookMethods, btcAddress, btcPrivateKey, KafkaConfig, multisigAddress, network, publickeys, signatureMinimum } from "./config";
 import { callBlockbook } from "./blockbook";
 import { producer } from "./kafka";
+import { psbts } from "./psbts";
 
 const updateUnwrapEvent = async (transaction: string) => {
     const session = client.startSession()
@@ -87,17 +88,27 @@ export const consumeUnwrapEvent = async (data: any) => {
 
         await updateUnwrapEvent(transaction)
 
-        // await producer.send({
-        //     topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.sign : KafkaConfig.topics.sign,
-        //     messages: [{
-        //         value: JSON.stringify({
-        //             transaction,
-        //             basePsbtHex,
-        //             signedPsbtHex
-        //         })
-        //     }]
-        // })
+        const record = await producer.send({
+            topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.sign : KafkaConfig.topics.sign,
+            messages: [{
+                value: JSON.stringify({
+                    transaction,
+                    basePsbtHex,
+                    signedPsbtHex
+                })
+            }]
+        })
+
+        console.log({ record })
+
+        psbts[transaction] = {
+            baseHex: basePsbtHex,
+            signedHexs: [signedPsbtHex]
+        }
+
+        console.log({ psbts: JSON.stringify(psbts) })
     } catch (e) {
+        console.error(e)
         throw e
     }
 }
@@ -141,9 +152,15 @@ const selectUtxos = async (fromAddress: string, toAddress: string, value: number
             }
         ]
 
-        const { inputs, outputs, fee } = coinSelect(utxos, targets, feeRate)
+        let { inputs, outputs, fee } = coinSelect(utxos, targets, feeRate)
 
         if (!inputs || !outputs) throw new Error(`utxos selections failed because no solution was found for address ${address} with value ${value}`)
+
+        const p2shFee = 10 + inputs.length * 298 + outputs.length * 32
+
+        outputs.forEach(output => output.value = output.address ? output.value : output.value + fee - p2shFee)
+
+        fee = p2shFee
 
         return { inputs, outputs, fee }
     } catch (e) {
@@ -160,11 +177,3 @@ const getTxDetails = async (hashes: string[]): Promise<any[]> => {
         throw e
     }
 }
-
-// getFeeRate()
-
-// getUtxos('mi7JyT8UAG6Ksd4LJbVuX866ssomxAZAY9').then(console.log).catch(console.error)
-
-// selectUtxos('mi7JyT8UAG6Ksd4LJbVuX866ssomxAZAY9', 607400).then(console.log)
-
-// getTxDetails(['1032d69cea56b11777757d0eabc8d8f74ab5207466b1d4a9fb762fce54550a69', '393c5822388f706d3e97f9c0289651aac242eaa7122ab30b09e6df1190b7ae4a']).then(console.log)

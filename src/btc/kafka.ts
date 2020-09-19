@@ -1,5 +1,6 @@
 import { Kafka, SASLMechanism } from "kafkajs";
 import { KafkaConfig } from "./config";
+import { consumeSignEvent } from "./consumeSignEvent";
 import { consumeUnwrapEvent } from "./consumeUnwrapEvent";
 
 const kafka = new Kafka({
@@ -43,16 +44,21 @@ const connectKafkaConsumer = async () => {
         await consumer.connect()
         console.log(`   -> consumer connected`)
 
-        await consumer.subscribe({
-            topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap : KafkaConfig.topics.unwrap, fromBeginning: true
-        })
+        await Promise.all([
+            consumer.subscribe({
+                topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap : KafkaConfig.topics.unwrap, fromBeginning: true
+            }),
+            consumer.subscribe({
+                topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.sign : KafkaConfig.topics.sign, fromBeginning: true
+            })
+        ])
 
         await consumer.run({
             eachMessage: async ({ topic, partition, message }) => {
                 try {
                     const data_string = message.value?.toString()
 
-                    console.log({ data_string })
+                    console.log({ topic, data_string })
 
                     if (!data_string) throw new Error(`consumer receive message null value`)
 
@@ -61,6 +67,9 @@ const connectKafkaConsumer = async () => {
                     switch (topic) {
                         case KafkaConfig.topicPrefix ? (KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap) : KafkaConfig.topics.unwrap:
                             await consumeUnwrapEvent(data)
+                            break;
+                        case KafkaConfig.topicPrefix ? (KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.sign) : KafkaConfig.topics.sign:
+                            await consumeSignEvent(data)
                             break;
 
                         default: throw new Error(`topic ${topic} not be implemented`)

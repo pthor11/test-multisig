@@ -13,7 +13,7 @@ export const solidityNodeUri = process.env.SOLIDITY_NODE
 export const eventServerUri = process.env.EVENT_SEVER
 
 export const unwrapEventName = 'UnWrap'
-export const maxEventReturnSize = 50
+export const maxEventReturnSize = 100
 export const eventRequestInterval = 10000
 
 export const KafkaConfig = {
