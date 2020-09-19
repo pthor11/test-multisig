@@ -28,7 +28,7 @@ const generateAddressP2SH = (m: number, pubkeys: string[]) => {
     return address
 }
 
-const sendP2khTransactionByPsbt = async (sender: string, hash: string, index: number, hex: string, voutValue: number, receiver: string, value: number, fee: number, message?: string) => {
+const sendTransactionByPsbt = async (sender: string, wif: string, hash: string, index: number, hex: string, voutValue: number, receiver: string, value: number, fee: number, message?: string) => {
     const psbt = new Psbt({ network })
 
     psbt.addInput({
@@ -42,19 +42,19 @@ const sendP2khTransactionByPsbt = async (sender: string, hash: string, index: nu
         value
     })
 
-    psbt.addOutput({
-        address: accounts.alice.address,
-        value: voutValue - value - fee
-    })
+    psbt.addOutput(message ?
+        {
+            address: sender,
+            value: voutValue - value - fee,
+            script: payments.embed({ data: [Buffer.from(message, 'utf-8')], network }).output!
+        } : {
+            address: sender,
+            value: voutValue - value - fee
+        })
 
-    if (message) psbt.addOutput({
-        script: payments.embed({ data: [Buffer.from(message, 'utf-8')], network }).output!,
-        value: 0
-    })
+    psbt.signInput(0, ECPair.fromWIF(wif, network))
 
-    psbt.signInput(0, ECPair.fromWIF(accounts.alice.privateKey, network))
-
-    psbt.validateSignaturesOfInput(0)
+    psbt.validateSignaturesOfAllInputs()
 
     psbt.finalizeAllInputs()
 
@@ -64,8 +64,10 @@ const sendP2khTransactionByPsbt = async (sender: string, hash: string, index: nu
 
 }
 
+sendTransactionByPsbt(accounts.alice.address, accounts.alice.privateKey, '6b553ff56604432381555fa0833e3768eaedc95bb5d2b21c603cd3bf47245c21', 0, '0200000002d5a3c10613305eef0bc76d1804a2e3ca697f722b0922137996f3330f00d0aa04000000006a47304402203036639c767b422adcbb7119bb2f9dd1cde78e7e170559be68a5dd1740cde4a8022067bb9647b05d2b05f78f85004c0862d11f42376b3957c53f3c8f1940db8ec27c012103f3793b230d4d7196ac5653a8bce9c1bd4a49c8282f3e4b08d8f545bc292b639fffffffffeed7042a7dcf145772a4cb1812be33aedbe76e736b54594f4d0ca3556d042a1d200200006b48304502210080fb36f1dad0f9c3ad0ee44debb8643e8e199a40e4d4c1d316e5786d0c51621202200aeab773ccf97044b15a823b6583a7ee67941e96af72b65d535ceb3bfadda68b0121022e1f3dbee9a15ac59009473c937c6fcb8143fa4099a7a96a8376e88e7317c218ffffffff01a8440900000000001976a9141c6fa80d00075917ec0cef054f29fc57fffd668e88ac00000000', 607400, '2Mwnxqt1ryXZ1iBHE1dgc1TseQE2bR4kWFP', 607000, 400, 'TUnj5nA4u5MwAzMmXXVTh8cQY7cUWvziT8')
+
 // sendP2khTransactionByPsbt(10000, 223, multisigAddress as string)
-sendP2khTransactionByPsbt(accounts.alice.address, '327fff74c3426179e6e9cc07b43330283dde8162cf23eb54bb0b2907df6ac143', 0, '020000000161a7cda1fdf701e53ee0028f92849cdf98144da71040a2aafd2f2f72fc1ae27100000000fc004730440220022fcb8878d212c8d2def8daa919c49f336c980233d9ba62ea3d047176e028d8022039d6996a5813b85dcca97fb553dcdd5c4a2ca25f50f9a0605e1d7dbcfc8916810147304402205e30dd7d309b3ba160507c591f954034456ec2bd8780aed6ecbf786ce7b95377022006b3444a4d4629dd030d814473d8a2eb60185e1be898676478ecf8b03b4039e4014c69522102c23eb1375eb0bf42377118c32e7a93fb497764f876e85153ca93783e07d137092102f8d3ea033f206aea7099d562f56a6427d26fe6e05e07c0b2e1a30b89d5c9034a2102777447212c74fbace7453377950ea0943508239b98a1463bc462227cbda7fc5d53aeffffffff02e8030000000000001976a9141c6fa80d00075917ec0cef054f29fc57fffd668e88ac288101000000000017a914ae77364995c8caafc5d235043d329101c45347c88700000000', 1000, '2Mwnxqt1ryXZ1iBHE1dgc1TseQE2bR4kWFP', 732, 268, 'TUnj5nA4u5MwAzMmXXVTh8cQY7cUWvziT8')
+// sendP2khTransactionByPsbt(accounts.alice.address, '327fff74c3426179e6e9cc07b43330283dde8162cf23eb54bb0b2907df6ac143', 0, '020000000161a7cda1fdf701e53ee0028f92849cdf98144da71040a2aafd2f2f72fc1ae27100000000fc004730440220022fcb8878d212c8d2def8daa919c49f336c980233d9ba62ea3d047176e028d8022039d6996a5813b85dcca97fb553dcdd5c4a2ca25f50f9a0605e1d7dbcfc8916810147304402205e30dd7d309b3ba160507c591f954034456ec2bd8780aed6ecbf786ce7b95377022006b3444a4d4629dd030d814473d8a2eb60185e1be898676478ecf8b03b4039e4014c69522102c23eb1375eb0bf42377118c32e7a93fb497764f876e85153ca93783e07d137092102f8d3ea033f206aea7099d562f56a6427d26fe6e05e07c0b2e1a30b89d5c9034a2102777447212c74fbace7453377950ea0943508239b98a1463bc462227cbda7fc5d53aeffffffff02e8030000000000001976a9141c6fa80d00075917ec0cef054f29fc57fffd668e88ac288101000000000017a914ae77364995c8caafc5d235043d329101c45347c88700000000', 1000, '2Mwnxqt1ryXZ1iBHE1dgc1TseQE2bR4kWFP', 732, 268, 'TUnj5nA4u5MwAzMmXXVTh8cQY7cUWvziT8')
 
 
 const gatherUtxoByCombinePsbt = async (value: number, address: string) => {
