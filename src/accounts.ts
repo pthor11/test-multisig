@@ -1,3 +1,6 @@
+import { payments, networks } from "bitcoinjs-lib"
+import { publickeys } from "./btc/config"
+
 export const accounts = {
     alice: {
         address: 'mi7JyT8UAG6Ksd4LJbVuX866ssomxAZAY9',
@@ -24,3 +27,18 @@ export const accounts = {
         privateKey: 'cW9Tp1sFim7nTRc3eQjHrnJCG9H6tATVwVxeWi3dGyqjaUspfHLR'
     }
 }
+
+export const multisigAddress = ({ m, pubkeys }: { m: number, pubkeys: string[] }) => {
+    const { address } = payments.p2sh({
+        redeem: payments.p2ms({
+            m,
+            pubkeys: pubkeys.map(pubkey => Buffer.from(pubkey, 'hex')),
+            network: networks.bitcoin
+        }),
+        network: networks.bitcoin
+    })
+
+    return address
+}
+
+console.log(multisigAddress({ m: 2, pubkeys: publickeys }))
