@@ -20,7 +20,7 @@ const wrap = async (tx: string, amount: number, address: string) => {
     }
 }
 
-// wrap('f5931122aa7449c3b3b182fec18b75ab1bfda917c1541603debb3afab3a9cdc7', 100, 'TSWVGDF84HNQgxV1JNcnqLytvmzzD8ioES').then(console.log).catch(console.error)
+wrap('f5931122aa7449c3b3b182fec18b75ab1bfda917c1541603debb3afab3a9cdc7', 100, 'TSWVGDF84HNQgxV1JNcnqLytvmzzD8ioES').then(console.log).catch(console.error)
 
 const checkUnwrapEvents = async () => {
     try {
@@ -75,4 +75,4 @@ const checkUnwrapEvents = async () => {
     }
 }
 
-export { checkUnwrapEvents }
+export { wrap, checkUnwrapEvents }

@@ -1,8 +1,11 @@
 import { callBlockbook } from "./blockbook"
-import { blockbookMethods, multisigAddress } from "./config"
-import { inspectOpReturnData, inspectTrxAddressInOpReturnData } from "../util"
+import { blockbookMethods, btcAddress, KafkaConfig, multisigAddress } from "./config"
+import { inspectOpReturnData } from "../util"
+import { insertWrapToDb } from "./models/Wrap"
+import { producer } from "./kafka"
+import { collectionNames, db } from "./mongo"
 
-export const getAllTransactions = async (page: number = 1, _transactions: any[] = []): Promise<any[]> => {
+const getAllTransactions = async (page: number = 1, _transactions: any[] = []): Promise<any[]> => {
     try {
         const result = await callBlockbook({
             method: blockbookMethods.address,
@@ -25,4 +28,43 @@ const isReceivedTransaction = (transaction: any): boolean => transaction.vin.fin
 
 const getMessageFromTransaction = (transaction: any): string | undefined => transaction.vout.find(output => !output.isAddress)?.hex
 
-getAllTransactions().then(transactions => transactions.forEach(transaction => console.log({ transaction, isReceivedTransaction: isReceivedTransaction(transaction), trxAddress: isReceivedTransaction(transaction) ?  inspectOpReturnData(getMessageFromTransaction(transaction) as string) : null })))
+
+
+export const checkWrapEvents = async () => {
+    try {
+        const transactions = await getAllTransactions()
+        for (const transaction of transactions.reverse()) {
+            if (isReceivedTransaction(transaction)) {
+                const insertedId = await insertWrapToDb(transaction)
+
+                const trxAddress = inspectOpReturnData(getMessageFromTransaction(transaction) as string)
+
+                const amount = transaction.vout.reduce((total, each) => each.isAddress && each.addresses.includes(multisigAddress) ? total + parseInt(each.value) : total, 0)
+
+                if (insertedId) {
+                    const record = await producer.send({
+                        topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.wrap : KafkaConfig.topics.wrap,
+                        messages: [{
+                            value: JSON.stringify({
+                                transaction,
+                                trxAddress,
+                                amount
+                            })
+                        }]
+                    })
+                    
+                    await db.collection(collectionNames.wraps).updateOne({
+                        _id: insertedId
+                    }, {
+                        $set: {
+                            producer: { btcAddress, record },
+                            updatedAt: new Date()
+                        }
+                    })
+                }
+            }
+        }
+    } catch (e) {
+        throw e
+    }
+}
