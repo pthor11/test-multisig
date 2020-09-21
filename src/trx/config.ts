@@ -19,6 +19,7 @@ export const eventRequestInterval = 10000
 export const KafkaConfig = {
     brokers: process.env.KAFKA_BROKERS,
     trxClientId: process.env.KAFKA_TRX_CLIENT_ID,
+    trxGroupId: process.env.KAFKA_TRX_GROUP_ID,
     mechanism: process.env.KAFKA_MECHANISM,
     username: process.env.KAFKA_USERNAME,
     password: process.env.KAFKA_PASSWORD,

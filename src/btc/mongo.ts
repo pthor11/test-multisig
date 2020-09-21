@@ -1,10 +1,12 @@
 import { connect, Db, MongoClient } from "mongodb";
 import { mongoUri } from "./config";
+import { WrapIndexes } from "./models/Wrap";
 
 export let client: MongoClient
 export let db: Db
 
 export const collectionNames = {
+    wraps: 'event.wraps',
     unwraps: 'event.unwraps'
 }
 
@@ -49,8 +51,7 @@ export const connectDb = async () => {
         db = client.db()
 
         await Promise.all([
-            // db.collection(collectionNameFingerPrint).createIndexes(FingerPrintIndexes),
-            // db.collection(collectionNameUnwrapEvent).createIndexes(UnwrapIndexes)
+            db.collection(collectionNames.wraps).createIndexes(WrapIndexes)
         ])
 
         console.log(`Mongodb: connected`)
