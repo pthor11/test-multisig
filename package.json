@@ -12,8 +12,8 @@
         "dev:trx:log": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.trx.ts",
         "dep:btc:log": "docker-compose -f docker-compose.btc.yml up --build -d",
         "dep:trx:log": "docker-compose -f docker-compose.trx.yml up --build -d",
-        "dep:node:log": "docker-compose -f docker-compose.node.yml up --build",
-        "dep:cluster:log": "docker-compose -f docker-compose.cluster.yml up --build"
+        "dep:node:log": "docker-compose -f docker-compose.node.yml --env-file=.env up --build",
+        "dep:cluster:log": "docker-compose -f docker-compose.cluster.yml --env-file=.cluster.env up --build"
     },
     "keywords": [],
     "author": "",
