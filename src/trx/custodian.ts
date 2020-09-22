@@ -1,17 +1,17 @@
 import { collectionNames, db } from "./mongo"
 import { producer } from "./kafka"
 import { tronWeb } from "./tronWeb"
-import { custodianAddress, eventRequestInterval, KafkaConfig, maxEventReturnSize, unwrapEventName, wrapperAddress } from "./config"
+import { trxAddress, eventRequestInterval, KafkaConfig, maxEventReturnSize, contractEvents, contractAddress } from "./config"
 import { FingerPrint, insertFingerPrintToDb } from "./models/FingerPrint"
 import { insertUnwrapToDb } from "./models/Unwrap"
 
-const wrap = async (tx: string, amount: number, address: string) => {
+const sendWrapToContract = async (btcHash: string, amount: number, userTrxAddress: string) => {
     try {
-        const contract = await tronWeb.contract().at(wrapperAddress)
+        const contract = await tronWeb.contract().at(contractAddress)
 
         // console.log({ contract });
 
-        const result = await contract.custodianConfirm('0x' + tx, amount, address).send({ callValue: 0 })
+        const result = await contract.custodianConfirm('0x' + btcHash, amount, userTrxAddress).send({ callValue: 0 })
 
         console.log({ result })
 
@@ -20,19 +20,17 @@ const wrap = async (tx: string, amount: number, address: string) => {
     }
 }
 
-wrap('f5931122aa7449c3b3b182fec18b75ab1bfda917c1541603debb3afab3a9cdc7', 100, 'TSWVGDF84HNQgxV1JNcnqLytvmzzD8ioES').then(console.log).catch(console.error)
-
 const checkUnwrapEvents = async () => {
     try {
-        const lastFingerPrint = await db.collection(collectionNames.fingerprints).findOne({ custodian: custodianAddress }, { limit: 1, sort: { createdAt: -1 } }) as FingerPrint
+        const lastFingerPrint = await db.collection(collectionNames.fingerprints).findOne({ trxAddress }, { limit: 1, sort: { createdAt: -1 } }) as FingerPrint
 
         // console.log({ lastFingerPrint })
 
-        const options = { eventName: unwrapEventName, size: maxEventReturnSize, onlyConfirmed: true }
+        const options = { eventName: contractEvents.UnWrap, size: maxEventReturnSize, onlyConfirmed: true }
 
         if (lastFingerPrint) options['fingerprint'] = lastFingerPrint.fingerprint
 
-        const results = await tronWeb.getEventResult(wrapperAddress, options)
+        const results = await tronWeb.getEventResult(contractAddress, options)
 
         console.log({ results: results.length });
 
@@ -44,23 +42,32 @@ const checkUnwrapEvents = async () => {
             delete result.fingerprint
 
             if (result.transaction) {
-                const insertedId = await insertUnwrapToDb(result)
+                console.log({ result })
+
+                const trxHash = result.transaction
+                const userBtcAddress = result.toAddress
+                const amount = result.amount
+
+                const data = { trxHash, userBtcAddress, amount }
+
+                const insertedId = await insertUnwrapToDb(result.transaction, result.toAddress, result.amount)
 
                 if (insertedId) {
                     const record = await producer.send({
-                        topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap : KafkaConfig.topics.unwrap,
+                        topic: KafkaConfig.topics.unwrap,
                         messages: [{
-                            value: JSON.stringify({
-                                custodian: custodianAddress,
-                                result
-                            })
+                            value: JSON.stringify(data)
                         }]
                     })
                     await db.collection(collectionNames.unwraps).updateOne({
                         _id: insertedId
                     }, {
                         $set: {
-                            producer: { custodian: custodianAddress, record },
+                            producer: {
+                                trxAddress,
+                                record,
+                                data
+                            },
                             updatedAt: new Date()
                         }
                     })
@@ -75,4 +82,4 @@ const checkUnwrapEvents = async () => {
     }
 }
 
-export { wrap, checkUnwrapEvents }
+export { sendWrapToContract, checkUnwrapEvents }

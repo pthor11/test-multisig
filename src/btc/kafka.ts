@@ -1,7 +1,7 @@
 import { Kafka, SASLMechanism } from "kafkajs";
 import { KafkaConfig } from "./config";
-import { consumeSignEvent } from "./consumeSignEvent";
-import { consumeUnwrapEvent } from "./consumeUnwrapEvent";
+import { consumeSignEvents } from "./consumeSignEvent";
+import { consumeUnwrapEvents } from "./consumeUnwrapEvent";
 
 const kafka = new Kafka({
     clientId: KafkaConfig.btcClientId,
@@ -17,6 +17,7 @@ const kafka = new Kafka({
 })
 
 const producer = kafka.producer()
+const consumer = kafka.consumer({ groupId: KafkaConfig.btcGroupId })
 
 producer.on("producer.disconnect", () => console.error(`Kafka: producer disconnected`))
 producer.on("producer.network.request_timeout", () => console.error(`Kafka: producer request timeout`))
@@ -32,24 +33,23 @@ const connectKafkaProducer = async () => {
     }
 }
 
-if (!KafkaConfig.btcGroupId) throw new Error(`BTC: consumer groupId must be provided`)
-
-const consumer = kafka.consumer({ groupId: KafkaConfig.btcGroupId })
-
 const connectKafkaConsumer = async () => {
     try {
-        console.log(`KAFKA: connecting ...`)
+        console.log(`Kafka: connecting ...`)
 
         console.log(`   -> consumer connecting ...`)
         await consumer.connect()
+
         console.log(`   -> consumer connected`)
 
         await Promise.all([
             consumer.subscribe({
-                topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap : KafkaConfig.topics.unwrap, fromBeginning: true
+                topic: KafkaConfig.topics.unwrap,
+                fromBeginning: true
             }),
             consumer.subscribe({
-                topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.sign : KafkaConfig.topics.sign, fromBeginning: true
+                topic: KafkaConfig.topics.sign,
+                fromBeginning: true
             })
         ])
 
@@ -65,11 +65,11 @@ const connectKafkaConsumer = async () => {
                     const data = JSON.parse(data_string)
 
                     switch (topic) {
-                        case KafkaConfig.topicPrefix ? (KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.unwrap) : KafkaConfig.topics.unwrap:
-                            await consumeUnwrapEvent(data)
+                        case KafkaConfig.topics.unwrap:
+                            await consumeUnwrapEvents(data)
                             break;
-                        case KafkaConfig.topicPrefix ? (KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.sign) : KafkaConfig.topics.sign:
-                            await consumeSignEvent(data)
+                        case KafkaConfig.topics.sign:
+                            await consumeSignEvents(data)
                             break;
 
                         default: throw new Error(`topic ${topic} not be implemented`)

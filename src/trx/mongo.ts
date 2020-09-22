@@ -1,4 +1,4 @@
-import { connect, Db, IndexSpecification, MongoClient } from "mongodb";
+import { connect, Db, MongoClient } from "mongodb";
 import { mongoUri } from "./config";
 import { FingerPrintIndexes } from "./models/FingerPrint";
 import { UnwrapIndexes } from "./models/Unwrap";
@@ -7,12 +7,13 @@ export let client: MongoClient
 export let db: Db
 
 export const collectionNames = {
-    unwraps: 'event.unwraps',
-    fingerprints: 'trx.fingerprints'
+    wraps: 'wraps',
+    unwraps: 'unwraps',
+    fingerprints: 'fingerprints'
 }
 
 export const connectDb = async () => {
-    if (!mongoUri) throw new Error(`TRX: mongo uri must be provided`)
+    if (!mongoUri) throw new Error(`mongo uri must be provided`)
 
     try {
         client = await connect(mongoUri, {

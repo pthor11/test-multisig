@@ -6,8 +6,8 @@ export let client: MongoClient
 export let db: Db
 
 export const collectionNames = {
-    wraps: 'event.wraps',
-    unwraps: 'event.unwraps'
+    wraps: 'wraps',
+    unwraps: 'unwraps'
 }
 
 export const connectDb = async () => {

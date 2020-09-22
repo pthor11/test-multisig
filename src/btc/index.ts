@@ -6,7 +6,10 @@ const start = async() => {
         await connectDb()
         
         await connectKafkaProducer()
+        
         await connectKafkaConsumer()
+
+        // await syncTransactions()
 
     } catch (e) {
         throw e

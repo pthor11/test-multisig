@@ -1,54 +1,36 @@
 import { client, collectionNames, db } from "./mongo"
-import { KafkaConfig } from "./config";
-import { wrap } from "./custodian";
+import { KafkaConfig, trxAddress } from "./config";
+import { sendWrapToContract } from "./custodian";
 import { producer } from "./kafka";
-
-// const updateWrapEvent = async (transaction: string) => {
-//     const session = client.startSession()
-//     session.startTransaction()
-//     try {
-//         const { value } = await db.collection(collectionNames.unwraps).findOneAndUpdate({ "result.transaction": transaction }, {
-//             $addToSet: { "consumer.signs": btcAddress },
-//             $set: { updateAt: new Date() }
-//         }, {
-//             returnOriginal: true,
-//             session
-//         })
-
-//         if (!value) throw new Error(`transaction ${transaction} not found to unwrap`)
-
-//         if (value.consumer?.signs?.includes(btcAddress)) {
-//             await session.abortTransaction()
-//         } else {
-//             await session.commitTransaction()
-//         }
-
-//         session.endSession()
-//     } catch (e) {
-//         await session.abortTransaction()
-//         session.endSession()
-//         if (e.code === 112) return updateUnwrapEvent(transaction)
-//         throw e
-//     }
-// }
+import { insertWrapEventToDb } from "./models/Wrap";
 
 export const consumeWrapEvent = async (data: any) => {
     try {
         console.log({ data })
 
-        const transaction = data.transaction
-        const trxAdress = data.trxAdress
+        const btcHash = data.btcHash
+        const userTrxAddress = data.userTrxAddress
         const amount = data.amount
 
-        if (!transaction) throw new Error(`consumer received wrap message with no transaction`)
-        if (!trxAdress) throw new Error(`consumer received wrap message with no trxAdress`)
+        if (!btcHash) throw new Error(`consumer received wrap message with no btc hash`)
+        if (!userTrxAddress) throw new Error(`consumer received wrap message with no user trx address`)
         if (!amount) throw new Error(`consumer received wrap message with invalid amount ${amount}`)
 
+        const insertedId = await insertWrapEventToDb(btcHash, userTrxAddress, amount)
 
+        if (insertedId) {
+            const trxHash = await sendWrapToContract(btcHash, amount, userTrxAddress)
 
-        const result = await wrap(transaction.txid, amount, trxAdress)
-
-        console.log({ result })
+            await db.collection(collectionNames.wraps).updateOne({ _id: insertedId }, {
+                $addToSet: {
+                    consumers: {
+                        trxAddress,
+                        trxHash,
+                        data
+                    }
+                }
+            })
+        }
 
     } catch (e) {
         console.error(e)

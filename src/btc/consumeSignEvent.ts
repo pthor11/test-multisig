@@ -37,7 +37,7 @@ const updateSendTxToUnwrapEvent = async ({ transaction, txRawHex, txId }: { tran
     }
 }
 
-export const consumeSignEvent = async (data: any) => {
+export const consumeSignEvents = async (data: any) => {
     let transaction, txRawHex: string = ''
 
     try {
@@ -84,7 +84,7 @@ export const consumeSignEvent = async (data: any) => {
     } catch (e) {
         const error = e.response?.data?.error
         if (error?.includes('min relay fee not met')) {
-            return consumeSignEvent(data)
+            return consumeSignEvents(data)
         } else if (!error?.includes('txn-mempool-conflict') && !error?.includes('transaction in blockchain')) {
             throw e
         }

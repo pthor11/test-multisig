@@ -8,10 +8,10 @@ export type Unwrap = {
     trxHash: string
     userBtcAddress: string
     amount: number
-    producer: {
+    consumers: {
         trxAddress: string,
-        record: RecordMetadata[]
-    }
+        data: any
+    }[]
 }
 
 export const UnwrapIndexes: IndexSpecification[] = [

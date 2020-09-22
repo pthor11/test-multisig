@@ -1,11 +1,11 @@
 import { callBlockbook } from "./blockbook"
 import { blockbookMethods, btcAddress, KafkaConfig, multisigAddress } from "./config"
 import { inspectOpReturnData } from "../util"
-import { insertWrapToDb } from "./models/Wrap"
+import { insertWrapEventToDb } from "./models/Wrap"
 import { producer } from "./kafka"
 import { collectionNames, db } from "./mongo"
 
-const getAllTransactions = async (page: number = 1, _transactions: any[] = []): Promise<any[]> => {
+const downloadAllTransactions = async (page: number = 1, _transactions: any[] = []): Promise<any[]> => {
     try {
         const result = await callBlockbook({
             method: blockbookMethods.address,
@@ -15,7 +15,7 @@ const getAllTransactions = async (page: number = 1, _transactions: any[] = []): 
         // console.log({ result });
 
         if (result.txs === result.itemsOnPage) {
-            return getAllTransactions(page + 1, result.txids)
+            return downloadAllTransactions(page + 1, result.txids)
         } else {
             return [...result.transactions, ..._transactions]
         }
@@ -32,32 +32,33 @@ const getMessageFromTransaction = (transaction: any): string | undefined => tran
 
 export const checkWrapEvents = async () => {
     try {
-        const transactions = await getAllTransactions()
+        const transactions = await downloadAllTransactions()
         for (const transaction of transactions.reverse()) {
             if (isReceivedTransaction(transaction)) {
-                const insertedId = await insertWrapToDb(transaction)
-
-                const trxAddress = inspectOpReturnData(getMessageFromTransaction(transaction) as string)
+                const userTrxAddress = inspectOpReturnData(getMessageFromTransaction(transaction) as string)
 
                 const amount = transaction.vout.reduce((total, each) => each.isAddress && each.addresses.includes(multisigAddress) ? total + parseInt(each.value) : total, 0)
 
+                const insertedId = await insertWrapEventToDb(transaction.txid, userTrxAddress, amount)
+
                 if (insertedId) {
+                    const data = {
+                        btcHash: transaction.txid,
+                        userTrxAddress,
+                        amount
+                    }
                     const record = await producer.send({
                         topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.wrap : KafkaConfig.topics.wrap,
                         messages: [{
-                            value: JSON.stringify({
-                                transaction,
-                                trxAddress,
-                                amount
-                            })
+                            value: JSON.stringify(data)
                         }]
                     })
-                    
+
                     await db.collection(collectionNames.wraps).updateOne({
                         _id: insertedId
                     }, {
                         $set: {
-                            producer: { btcAddress, record },
+                            producer: { btcAddress, record, data },
                             updatedAt: new Date()
                         }
                     })

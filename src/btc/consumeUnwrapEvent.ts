@@ -35,21 +35,23 @@ const updateUnwrapEvent = async (transaction: string) => {
     }
 }
 
-export const consumeUnwrapEvent = async (data: any) => {
+export const consumeUnwrapEvents = async (data: any) => {
     try {
         console.log({ data })
 
-        const transaction = data.result?.transaction
-        const toAddress = data.result?.result?.toAddress
-        const amount = Number(data.result?.result?.amount)
+        const trxHash = data.trxHash
+        const userBtcAddress = data.userBtcAddress
+        const amount = data.amount
 
-        if (!transaction) throw new Error(`consumer received unwrap message with no transaction`)
+        if (!trxHash) throw new Error(`consumer received unwrap message with no trxHash`)
+        
+        if (!userBtcAddress) throw new Error(`consumer received unwrap message with no user btc address`)
 
         if (!Number.isInteger(amount)) throw new Error(`consumer received unwrap message with invalid amount ${amount}`)
 
-        if (!address.toOutputScript(toAddress, network)) throw new Error(`consumer received unwrap message with invalid address ${amount} for network ${network}`)
+        if (!address.toOutputScript(userBtcAddress, network)) throw new Error(`consumer received unwrap message with invalid address ${amount} for network ${network}`)
 
-        const { inputs, outputs, fee } = await selectUtxos(multisigAddress, toAddress, amount)
+        const { inputs, outputs, fee } = await selectUtxos(multisigAddress, userBtcAddress, amount)
 
         console.log({ inputs, outputs, fee })
 
@@ -86,13 +88,13 @@ export const consumeUnwrapEvent = async (data: any) => {
         const signedPsbtHex = psbt.toBase64()
         console.log({ signedPsbtHex })
 
-        await updateUnwrapEvent(transaction)
+        await updateUnwrapEvent(trxHash)
 
         const record = await producer.send({
             topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.sign : KafkaConfig.topics.sign,
             messages: [{
                 value: JSON.stringify({
-                    transaction,
+                    trxHash,
                     basePsbtHex,
                     signedPsbtHex
                 })
@@ -101,7 +103,7 @@ export const consumeUnwrapEvent = async (data: any) => {
 
         console.log({ record })
 
-        psbts[transaction] = {
+        psbts[trxHash] = {
             baseHex: basePsbtHex,
             signedHexs: [signedPsbtHex]
         }

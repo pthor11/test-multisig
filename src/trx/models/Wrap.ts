@@ -1,4 +1,3 @@
-import { RecordMetadata } from "kafkajs"
 import { IndexSpecification, ObjectID } from "mongodb"
 import { client, collectionNames, db } from "../mongo"
 
@@ -8,11 +7,11 @@ export type Wrap = {
     btcHash: string
     userTrxAddress: string
     amount: number
-    producer: {
-        btcAddress: string,
+    consumers: {
+        trxAddress: string,
         data: any
-        record: RecordMetadata[]
-    }
+        trxHash: string
+    }[]
 }
 
 export const WrapIndexes: IndexSpecification[] = [
