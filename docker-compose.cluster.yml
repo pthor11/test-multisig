@@ -1,0 +1,49 @@
+version: "3.8"
+services: 
+  wrapper-btc-1:
+    build: 
+      context: .
+      dockerfile: Dockerfile.btc
+    restart: always
+    env_file: 
+      - .node1.env
+
+  wrapper-trx-1:
+    build: 
+      context: .
+      dockerfile: Dockerfile.trx
+    restart: always
+    env_file: 
+      - .node1.env
+
+  wrapper-btc-2:
+    build: 
+      context: .
+      dockerfile: Dockerfile.btc
+    restart: always
+    env_file: 
+      - .node2.env
+
+  wrapper-trx-2:
+    build: 
+      context: .
+      dockerfile: Dockerfile.trx
+    restart: always
+    env_file: 
+      - .node2.env
+
+  wrapper-btc-3:
+    build: 
+      context: .
+      dockerfile: Dockerfile.btc
+    restart: always
+    env_file: 
+      - .node3.env
+
+  wrapper-trx-3:
+    build: 
+      context: .
+      dockerfile: Dockerfile.trx
+    restart: always
+    env_file: 
+      - .node3.env

@@ -6,9 +6,9 @@ const start = async() => {
     try {
         await connectDb()
         
-        await connectKafkaProducer()
+        // await connectKafkaProducer()
 
-        await checkUnwrapEvents()
+        // await checkUnwrapEvents()
     } catch (e) {
         throw e
     }
