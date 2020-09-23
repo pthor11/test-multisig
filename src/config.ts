@@ -5,11 +5,13 @@ config()
 
 export const mongoUri = process.env.MONGO_URI
 
-// if (!process.env.BTC_NETWORK) throw new Error(`btc network must be provided mainnet or testnet`)
-// export const network = process.env.NETWORK === 'mainnet' ? networks.bitcoin : networks.testnet
+if (!process.env.BTC_NETWORK) throw new Error(`btc network must be provided mainnet or testnet`)
+export const network = process.env.NETWORK === 'mainnet' ? networks.bitcoin : networks.testnet
 
-// if (!process.env.BTC_MULTISIG_ADDRESS) throw new Error(`btc multisig address must be provided`)
-// export const multisigAddress = process.env.BTC_MULTISIG_ADDRESS
+if (!process.env.BTC_MULTISIG_ADDRESS) throw new Error(`btc multisig address must be provided`)
+export const multisigAddress = process.env.BTC_MULTISIG_ADDRESS
+
+
 
 // if (!process.env.BTC_NODE_ADDRESS) throw new Error(`btc node address must be provided`)
 // export const btcAddress = process.env.BTC_NODE_ADDRESS

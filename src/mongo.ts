@@ -6,6 +6,7 @@ export let client: MongoClient
 export let db: Db
 
 export const collectionNames = {
+    syncs: 'syncs',
     wraps: 'wraps',
     unwraps: 'unwraps'
 }

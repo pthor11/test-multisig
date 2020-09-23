@@ -1,17 +1,13 @@
-import { checkUnwrapEvents } from "./custodian"
-import { connectKafkaProducer } from "./kafka"
-import { connectDb } from "./mongo"
+import { connectDb } from "../mongo"
 
-const start = async() => {
+const startTrx = async () => {
     try {
         await connectDb()
-        
-        // await connectKafkaProducer()
 
-        // await checkUnwrapEvents()
+        process.on('message', msg => console.log(`trx received msg`, msg))
     } catch (e) {
         throw e
     }
 }
 
-start()
+startTrx()
