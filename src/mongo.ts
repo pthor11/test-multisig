@@ -1,5 +1,5 @@
 import { connect, Db, MongoClient } from "mongodb";
-import { mongoPort } from "./config";
+import { mongoUri } from "./config";
 // import { WrapIndexes } from "./models/Wrap";
 
 export let client: MongoClient
@@ -11,10 +11,10 @@ export const collectionNames = {
 }
 
 export const connectDb = async () => {
-    // if (!mongoUri) throw new Error(`BTC: mongo uri must be provided`)
+    if (!mongoUri) throw new Error(`BTC: mongo uri must be provided`)
 
     try {
-        client = await connect(`mongodb://mongo:${mongoPort}/wrapper`, {
+        client = await connect(mongoUri, {
             useUnifiedTopology: true,
             useNewUrlParser: true,
             ignoreUndefined: true
@@ -57,6 +57,7 @@ export const connectDb = async () => {
         console.log(`Mongodb: connected`)
     } catch (e) {
         console.error(`Mongodb: disconnected`)
+        await client?.close(true)
         setTimeout(connectDb, 1000)
         throw e
     }

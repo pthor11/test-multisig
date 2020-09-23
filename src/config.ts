@@ -3,8 +3,7 @@ import { networks } from "bitcoinjs-lib"
 
 config()
 
-if (!process.env.MONGO_PORT) throw new Error(`mongo port must be provided`)
-export const mongoPort = process.env.MONGO_PORT
+export const mongoUri = process.env.MONGO_URI
 
 // if (!process.env.BTC_NETWORK) throw new Error(`btc network must be provided mainnet or testnet`)
 // export const network = process.env.NETWORK === 'mainnet' ? networks.bitcoin : networks.testnet
