@@ -3,21 +3,18 @@ version: "3.8"
 services:
   mongo:
     image: mongo
-    container_name: mongo
     volumes:
       - ./data:/data/db
-    network_mode: bridge
     ports:
       - ${MONGO_PORT}:27017
 
   wrapper-btc:
-    depends_on:
-      - mongo
     build:
       context: .
       dockerfile: Dockerfile.btc
-    network_mode: bridge
-    links: 
+    links:
+      - mongo
+    depends_on:
       - mongo
     env_file: .env
     restart: always
@@ -26,3 +23,7 @@ services:
   #     context: .
   #     dockerfile: Dockerfile.trx
   #   restart: always
+
+networks:
+  app:
+    driver: bridge
