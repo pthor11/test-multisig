@@ -1,7 +1,6 @@
-import { collectionNames, connectDb, db } from "../mongo"
+import { collectionNames, db } from "../mongo"
 import { callBlockbook } from "./blockbook"
 import { blockbookMethods, multisigAddress } from "../config"
-import { BtcTx } from "../models/BtcTx"
 import { Coin } from "../models/Coin"
 import { Sync } from "../models/Sync"
 
