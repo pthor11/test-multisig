@@ -1,6 +1,6 @@
 import axios from 'axios'
 import * as https from 'https'
-import { btcBlockbook, blockbookMethods } from './config'
+import { btcBlockbook, blockbookMethods } from '../config'
 
 const callBlockbook = async ({ method, data, params = {} }) => {
     try {

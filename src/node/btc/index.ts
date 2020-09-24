@@ -1,5 +1,6 @@
 import { connectDb } from "../mongo"
-import { syncTransactions } from "./syncTransactions"
+import { processBtcTx } from "./processBtcTx"
+import { syncBtcBlocks } from "./syncBtcBlocks"
 
 const startBtc = async() => {
     try {
@@ -9,7 +10,9 @@ const startBtc = async() => {
         
         // await connectKafkaConsumer()
 
-        await syncTransactions()
+        await syncBtcBlocks()
+
+        await processBtcTx()
 
     } catch (e) {
         throw e

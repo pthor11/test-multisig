@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   mongo:
-    container_name: wrapper-mongo
+    container_name: mongo
     image: mongo
     volumes:
       - ./data:/data/db
@@ -10,8 +10,8 @@ services:
       - 27017:27017
     restart: always
 
-  btc:
-    container_name: wrapper-btc
+  wrapper:
+    container_name: wrapper-node
     build:
       context: .
       dockerfile: Dockerfile.btc

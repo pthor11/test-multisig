@@ -3,8 +3,7 @@ import { networks } from "bitcoinjs-lib"
 
 config()
 
-// if (!process.env.BTC_MONGO) throw new Error(`btc mongo must be provided`)
-// export const mongoUri = process.env.BTC_MONGO
+export const mongoUri = process.env.MONGO_URI
 
 if (!process.env.BTC_NETWORK) throw new Error(`btc network must be provided mainnet or testnet`)
 export const network = process.env.NETWORK === 'mainnet' ? networks.bitcoin : networks.testnet
@@ -35,21 +34,18 @@ export const signatureMinimum = parseInt(process.env.BTC_SIGNATURE_MINIMUM)
 if (!process.env.BTC_PUBLICKEYS) throw new Error(`btc publickeys must be provided`)
 export const publickeys = process.env.BTC_PUBLICKEYS.split(',')
 
-// if (!process.env.KAFKA_BROKERS) throw new Error(`kafka brokers must be provided`)
-// if (!process.env.KAFKA_BTC_CLIENT_ID) throw new Error(`kafka btc client id must be provided`)
-// if (!process.env.KAFKA_BTC_GROUP_ID) throw new Error(`kafka btc group id must be provided`)
+export const contractAddress = process.env.TRX_CONTRACT_ADDRESS
+export const trxAddress = process.env.TRX_NODE_ADDRESS
+export const trxPrivateKey = process.env.TRX_NODE_PRIVATEKEY
 
-// export const KafkaConfig = {
-//     brokers: process.env.KAFKA_BROKERS,
-//     btcClientId: process.env.KAFKA_BTC_CLIENT_ID,
-//     btcGroupId: process.env.KAFKA_BTC_GROUP_ID,
-//     mechanism: process.env.KAFKA_MECHANISM,
-//     username: process.env.KAFKA_USERNAME,
-//     password: process.env.KAFKA_PASSWORD,
-//     topicPrefix: process.env.KAFKA_TOPIC_PREFIX,
-//     topics: {
-//         wrap: process.env.KAFKA_TOPIC_PREFIX ? process.env.KAFKA_TOPIC_PREFIX + '.' + 'wrap' : 'wrap',
-//         unwrap: process.env.KAFKA_TOPIC_PREFIX ? process.env.KAFKA_TOPIC_PREFIX + '.' + 'unwrap' : 'unwrap',
-//         sign: process.env.KAFKA_TOPIC_PREFIX ? process.env.KAFKA_TOPIC_PREFIX + '.' + 'sign': 'sign'
-//     }
-// }
+export const fullNodeUri = process.env.TRX_FULL_NODE
+export const solidityNodeUri = process.env.TRX_SOLIDITY_NODE
+export const eventServerUri = process.env.TRX_EVENT_SEVER
+
+export const contractEvents = {
+    Wrap: 'Wrap',
+    UnWrap: 'UnWrap'
+}
+export const maxEventReturnSize = 100
+
+export const eventRequestInterval = 10000

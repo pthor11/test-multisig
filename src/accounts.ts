@@ -1,5 +1,5 @@
 import { payments, networks } from "bitcoinjs-lib"
-import { publickeys } from "./btc/config"
+import { publickeys } from "./node/btc/config"
 
 export const accounts = {
     alice: {
