@@ -23,6 +23,7 @@ export const btcBlockbook = process.env.BTC_BLOCKBOOK
 export const blockbookMethods = {
     tx: 'tx',
     utxo: 'utxo',
+    block: 'block',
     sendtx: 'sendtx',
     address: 'address',
     estimatefee: 'estimatefee',

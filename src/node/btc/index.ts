@@ -12,7 +12,7 @@ const startBtc = async() => {
 
         await syncBtcBlocks()
 
-        await processBtcTx()
+        // await processBtcTx()
 
     } catch (e) {
         throw e
