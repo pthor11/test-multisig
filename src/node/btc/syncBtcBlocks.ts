@@ -1,15 +1,13 @@
-import { collectionNames, connectDb, db } from "../mongo"
+import { collectionNames, db } from "../mongo"
 import { callBlockbook } from "./blockbook"
 import { blockbookMethods, multisigAddress } from "../config"
-import { BtcTx } from "../models/BtcTx"
+import { Coin } from "../models/Coin"
+import { Sync } from "../models/Sync"
 
 
-const downloadTxs = async (from?: number, to?: number, page: number = 1, _transactions: any[] = []): Promise<any[]> => {
+const downloadAllTxs = async (page: number = 1, _transactions: any[] = []): Promise<any[]> => {
     try {
         let data = `${multisigAddress}?details=txs&page=${page}&pageSize=10`
-
-        if (from) data += `&from=${from}`
-        if (to) data += `&to=${to}`
 
         // console.log({ data });
 
@@ -20,11 +18,26 @@ const downloadTxs = async (from?: number, to?: number, page: number = 1, _transa
 
         const transactions = address.transactions ? address.transactions : []
 
-        if (page !== address.totalPages) return downloadTxs(from, to, page + 1, [...transactions, ..._transactions])
-
-        return [...transactions, ..._transactions].reverse()
-
+        return page === address.totalPages ? [..._transactions, ...transactions] : downloadAllTxs(page + 1, [..._transactions, ...transactions])
     } catch (e) {
+        throw e
+    }
+}
+
+const downloadBlock = async (blockHeight: number, page: number = 1, _txs: any[] = []) => {
+    try {
+        const block = await callBlockbook({
+            method: blockbookMethods.block,
+            data: `${blockHeight}`
+        })
+
+        const { txs, totalPages } = block
+
+        if (page === totalPages) return [...txs, ..._txs]
+
+        return downloadBlock(blockHeight, page + 1, [...txs, ..._txs])
+    } catch (e) {
+        if (e.response?.status === 400 && e.response?.data?.error === 'Block not found, Block not found') return []
         throw e
     }
 }
@@ -32,30 +45,50 @@ const downloadTxs = async (from?: number, to?: number, page: number = 1, _transa
 
 const syncBtcBlocks = async () => {
     try {
-        const lastTx = await db.collection(collectionNames.btcTxs).findOne({}, { sort: { "raw.blockHeight": -1 }, projection: { _id: false, "raw.blockHeight": true } }) as BtcTx
+        const sync = await db.collection(collectionNames.syncs).findOne({ coin: Coin.btc }) as Sync
 
-        console.log({ lastTx })
+        console.log({ sync })
 
-        const fromBlock = lastTx?.raw?.blockHeight ? lastTx.raw.blockHeight + 1 : undefined
-        const toBlock = fromBlock ? fromBlock + 50 : undefined
+        const nextHeight = sync ? sync.height + 1 : undefined
 
-        // console.log({ fromBlock, toBlock })
+        console.log({ nextHeight })
 
-        const txs = await downloadTxs(fromBlock, toBlock)
+        const txs = nextHeight ? await downloadBlock(nextHeight) : await downloadAllTxs()
 
-        const btcTxs = txs.map(tx => {
-            return {
-                processed: false,
-                raw: tx,
-                createdAt: new Date()
-            }
-        })
+        const btcTxs = txs.reduce((txs, tx) => tx.vin.find(input => input.isAddress && input.addresses.includes(multisigAddress)) || (tx.vout.find(output => output.isAddress && output.addresses.includes(multisigAddress))) ? [...txs, {
+            processed: false,
+            raw: tx,
+            createdAt: new Date()
+        }] : txs, [])
 
-        if (btcTxs.length > 0) await db.collection(collectionNames.btcTxs).insertMany(btcTxs)
+        console.log({ btcTxs: btcTxs.length })
 
-        setTimeout(syncBtcBlocks, 50000)
+        if (btcTxs.length > 0) {
+            await Promise.all([
+                db.collection(collectionNames.btcTxs).insertMany(btcTxs),
+                db.collection(collectionNames.syncs).updateOne({
+                    coin: Coin.btc
+                }, {
+                    $set: {
+                        height: nextHeight || btcTxs[0].raw.blockHeight,
+                        updatedAt: new Date()
+                    }
+                }, { upsert: true })
+            ])
+        } else {
+            await db.collection(collectionNames.syncs).updateOne({
+                coin: Coin.btc
+            }, {
+                $set: {
+                    height: nextHeight || btcTxs[0].raw.blockHeight,
+                    updatedAt: new Date()
+                }
+            }, { upsert: true })
+        }
+
+        setTimeout(syncBtcBlocks, 1000)
     } catch (e) {
-        setTimeout(syncBtcBlocks, 50000)
+        setTimeout(syncBtcBlocks, 1000)
         throw e
     }
 }
