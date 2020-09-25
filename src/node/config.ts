@@ -34,7 +34,7 @@ export const signatureMinimum = parseInt(process.env.BTC_SIGNATURE_MINIMUM)
 if (!process.env.BTC_PUBLICKEYS) throw new Error(`btc publickeys must be provided`)
 export const publickeys = process.env.BTC_PUBLICKEYS.split(',')
 
-export const contractAddress = process.env.TRX_CONTRACT_ADDRESS
+export const factoryContractAddress = process.env.TRX_FACTORY_ADDRESS
 export const trxAddress = process.env.TRX_NODE_ADDRESS
 export const trxPrivateKey = process.env.TRX_NODE_PRIVATEKEY
 
