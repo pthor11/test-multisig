@@ -1,4 +1,6 @@
-import { factoryContractAddress } from "../config"
+import { factoryContractAddress, maxEventReturnSize } from "../config"
+import { WrapperEvent } from "../models/WrapperEvent"
+import { collectionNames, db } from "../mongo"
 import { tronWeb } from "./tronWeb"
 
 let factoryContract: any
@@ -22,7 +24,35 @@ const triggerContract = async (trigger: 'read' | 'write', functionName: string, 
     }
 }
 
+const getWrapEventResults = async () => {
+    try {
+        const options = {
+            eventName: WrapperEvent.Wrap,
+            size: maxEventReturnSize
+        }
+        const results = await tronWeb.getEventResult(factoryContractAddress, options)
+
+        for (const result of results) {
+            const trxHash = result.transaction
+            const trxTime = result.timestamp
+            const btcHash = result.result.txId
+
+            await db.collection(collectionNames.wraps).updateOne({ btcHash }, {
+                $set: {
+                    trxHash,
+                    trxTime,
+                    updatedAt: new Date()
+                }
+            }, { upsert: true })
+        }
+    } catch (e) {
+        throw e
+    }
+}
+
 export {
     getContract,
     triggerContract
 }
+
+getWrapEventResults().then(console.log).catch(console.error)
