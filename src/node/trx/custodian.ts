@@ -107,7 +107,7 @@ const wrap = async (btcHash: string, userAmount: number, userTrxAddress: string)
 
         // console.log({ contract });
 
-        const result = await factoryContract.custodianConfirm('0x' + btcHash, userAmount, userTrxAddress).send({ callValue: 0 })
+        const result = await factoryContract.custodianConfirm('0x' + btcHash, userAmount, tronWeb.address.toHex(userTrxAddress)).send({ callValue: 0 })
 
         console.log({ result })
     } catch (e) {
@@ -118,18 +118,23 @@ const wrap = async (btcHash: string, userAmount: number, userTrxAddress: string)
 const getFactoryContractEventResults = async (options: { eventName: string, size: number }) => {
     try {
         const results = await tronWeb.getEventResult(factoryContractAddress, options)
-        console.log({ results })
+        console.log(results)
+
+        for (const result of results) {
+            console.log({ result, userTrxAddress: result.result.toAddress, decoded: tronWeb.address.fromHex(result.result.toAddress) });
+
+        }
 
     } catch (e) {
         throw e
     }
 }
 
-const btcHash = '15fce92ee4980092aa77294a6e1b90414b889d11c0e0b6608b3b7d50df58e880'
-const userAmount = 100
+const btcHash = '327fff74c3426179e6e9cc07b43330283dde8162cf23eb54bb0b2907df6ac143'
+const userAmount = 200
 const userTrxAddress = 'TDmYMKhVZTX7Xc2jEtmGmLNp5i8uCEnarT'
 
-wrap(btcHash, userAmount, userTrxAddress).then(console.log).catch(console.error)
+// wrap(btcHash, userAmount, userTrxAddress).then(console.log).catch(console.error)
 
 // getFactoryContractEventResults({ eventName: 'Wrap', size: 100 }).then(console.log).catch(console.error)
 
