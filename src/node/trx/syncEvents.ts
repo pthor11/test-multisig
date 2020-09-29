@@ -33,7 +33,7 @@ const updateEvents = async (_fingerprint?: string, _events: any[] = [], refEvent
 
         if (_fingerprint) options.fingerprint = _fingerprint
 
-        console.log({ _fingerprint, refEvent })
+        // console.log({ _fingerprint, refEvent })
 
 
         const events: any[] = await tronWeb.getEventResult(factoryContractAddress, options)
@@ -54,7 +54,7 @@ const syncEvents = async () => {
 
         const events = count ? await updateEvents() : await getAllEvents()
 
-        console.log({ count, events: events.length })
+        // console.log({ count, events: events.length })
 
         if (events.length > 0) await db.collection(collectionNames.trxEvents).insertMany(events.map(event => {
             return {
@@ -70,8 +70,5 @@ const syncEvents = async () => {
         throw e
     }
 }
-
-connectDb().then(syncEvents)
-
 
 export { syncEvents }
