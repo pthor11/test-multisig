@@ -1,5 +1,5 @@
 import { WrapMessage } from "../models/Message.process";
-import { triggerFactoryContract } from "../../trx/factory.contract";
+import { triggerFactoryContract } from "./factory.contract";
 
 const processWrapMessage = async (msg: WrapMessage) => {
     try {

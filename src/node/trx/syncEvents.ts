@@ -1,6 +1,6 @@
 import { tronWeb } from "./tronWeb"
 import { factoryContractAddress } from "../config"
-import { collectionNames, connectDb, db } from "../mongo"
+import { collectionNames, db } from "../mongo"
 
 const getAllEvents = async (_fingerprint?: string, _events: any[] = []) => {
     try {

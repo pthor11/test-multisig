@@ -1,16 +1,16 @@
 import { connectDb } from "../mongo"
-import { processBtcTx } from "./processBtcTx"
-import { syncBtcTxs } from "./syncBtcTxs"
+import { processTx } from "./processTx"
+import { syncTxs } from "./syncTxs"
 
 const startBtc = async() => {
     try {
         await connectDb()
+
+        await syncTxs()
         
         // await connectKafkaProducer()
         
         // await connectKafkaConsumer()
-
-        await syncBtcTxs()
 
         // await processBtcTx()
 

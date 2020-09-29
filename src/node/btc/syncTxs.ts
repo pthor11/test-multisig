@@ -2,7 +2,7 @@ import { collectionNames, db } from "../mongo"
 import { callBlockbook } from "./blockbook"
 import { blockbookMethods, multisigAddress } from "../config"
 
-const downloadAllTxs = async (page: number = 1, _transactions: any[] = []): Promise<any[]> => {
+const getAllTxs = async (page: number = 1, _transactions: any[] = []): Promise<any[]> => {
     try {
         const data = `${multisigAddress}?details=txs&page=${page}&pageSize=10`
 
@@ -15,7 +15,7 @@ const downloadAllTxs = async (page: number = 1, _transactions: any[] = []): Prom
 
         const transactions = address.transactions ? address.transactions : []
 
-        return page === address.totalPages ? [..._transactions, ...transactions] : downloadAllTxs(page + 1, [..._transactions, ...transactions])
+        return page === address.totalPages ? [..._transactions, ...transactions] : getAllTxs(page + 1, [..._transactions, ...transactions])
     } catch (e) {
         throw e
     }
@@ -46,10 +46,10 @@ const updateTxs = async (page: number = 1, _transactions: any[] = [], refTx?: an
     }
 }
 
-const syncBtcTxs = async () => {
+const syncTxs = async () => {
     try {
         const count = await db.collection(collectionNames.btcTxs).estimatedDocumentCount()
-        const txs = count ? await updateTxs() : await downloadAllTxs()
+        const txs = count ? await updateTxs() : await getAllTxs()
 
         if (txs.length > 0) await db.collection(collectionNames.btcTxs).insertMany(txs.map(tx => {
             return {
@@ -59,11 +59,11 @@ const syncBtcTxs = async () => {
             }
         }))
 
-        setTimeout(syncBtcTxs, 1000)
+        setTimeout(syncTxs, 1000)
     } catch (e) {
-        setTimeout(syncBtcTxs, 1000)
+        setTimeout(syncTxs, 1000)
         throw e
     }
 }
 
-export { syncBtcTxs }
+export { syncTxs }
