@@ -1,7 +1,7 @@
 import { client, collectionNames, db } from "./mongo"
 import * as coinSelect from "coinselect";
 import { payments, Psbt, address, ECPair } from "bitcoinjs-lib";
-import { blockbookMethods, btcAddress, btcPrivateKey, KafkaConfig, multisigAddress, network, publickeys, signatureMinimum } from "./config";
+import { blockbookMethods, btcAddress, btcPrivateKey, KafkaConfig, multisigAddress, network, publickeys, signatureMinimum } from "../config";
 import { callBlockbook } from "./blockbook";
 import { producer } from "./kafka";
 import { psbts } from "./psbts";

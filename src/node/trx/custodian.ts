@@ -136,6 +136,6 @@ const userTrxAddress = 'TDmYMKhVZTX7Xc2jEtmGmLNp5i8uCEnarT'
 
 // wrap(btcHash, userAmount, userTrxAddress).then(console.log).catch(console.error)
 
-// getFactoryContractEventResults({ eventName: 'Wrap', size: 100 }).then(console.log).catch(console.error)
+getFactoryContractEventResults({ eventName: 'Wrap', size: 100 }).then(console.log).catch(console.error)
 
 // wrapper(btcHash).then(console.log).catch(console.error)

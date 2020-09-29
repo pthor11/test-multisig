@@ -1,7 +1,7 @@
 import { multisigAddress } from "../config"
 import { BtcTxProcessStatus } from "../models/BtcTx"
 import { WrapperEvent } from "../models/WrapperEvent"
-import { WrapMessage } from "../models/ProcessMessage"
+import { WrapMessage } from "../models/Message.process"
 import { collectionNames, db } from "../mongo"
 import { tronWeb } from "../trx/tronWeb"
 

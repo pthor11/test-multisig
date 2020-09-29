@@ -47,6 +47,6 @@ export const contractEvents = {
     Wrap: 'Wrap',
     UnWrap: 'UnWrap'
 }
-export const maxEventReturnSize = 100
+export const maxEventReturnSize = 2 //200
 
 export const eventRequestInterval = 10000

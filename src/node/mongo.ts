@@ -9,7 +9,7 @@ export let db: Db
 export const collectionNames = {
     syncs: 'syncs',
     btcTxs: 'btcTxs',
-    trxTxs: 'trxTxs',
+    trxEvents: 'trxEvents',
     wraps: 'wraps',
     unwraps: 'unwraps'
 }

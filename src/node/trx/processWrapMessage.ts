@@ -1,5 +1,5 @@
-import { WrapMessage } from "../models/ProcessMessage";
-import { triggerContract } from "./factoryContract";
+import { WrapMessage } from "../models/Message.process";
+import { triggerFactoryContract } from "../../trx/factory.contract";
 
 const processWrapMessage = async (msg: WrapMessage) => {
     try {
@@ -7,7 +7,7 @@ const processWrapMessage = async (msg: WrapMessage) => {
         if (!msg.userAmount) throw new Error(`wrap message has invalid user amount ${msg}`)
         if (!msg.userTrxAddress) throw new Error(`wrap message has invalid user trx address ${msg}`)
 
-        const trxHash = await triggerContract('write', 'custodianConfirm', ['0x' + msg.btcHash, msg.userAmount, msg.userTrxAddress])
+        const trxHash = await triggerFactoryContract('write', 'custodianConfirm', ['0x' + msg.btcHash, msg.userAmount, msg.userTrxAddress])
 
         console.log({ trxHash })
     } catch (e) {

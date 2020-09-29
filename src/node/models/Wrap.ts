@@ -5,7 +5,7 @@ type Wrap = {
     btcTime: Date
     userTrxAddress: string
     userAmount: number
-    trxHash?: number
+    trxHash?: string
     trxTime?: Date
     updatedAt: Date
     createdAt: Date
