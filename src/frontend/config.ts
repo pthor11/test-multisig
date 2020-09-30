@@ -2,14 +2,11 @@ import { config } from "dotenv";
 import { networks } from "bitcoinjs-lib";
 
 config()
+export const network = networks.testnet
 
-if (!process.env.BTC_NETWORK || process.env.BTC_NETWORK && !['mainnet', 'testnet'].includes(process.env.BTC_NETWORK)) throw new Error(`btc network must be set mainnet or testnet`)
+export const btcMultisigAddress = '2Mwnxqt1ryXZ1iBHE1dgc1TseQE2bR4kWFP'
 
-export const network = process.env.BTC_NETWORK === 'mainnet' ? networks.bitcoin : networks.testnet
-
-if (!process.env.BTC_BLOCKBOOK) throw new Error(`btc api must be set`)
-
-export const btcBlockbook = process.env.BTC_BLOCKBOOK
+export const btcBlockbook = 'https://tbtc1.trezor.io/api/v2'
 
 export const blockbookMethods = {
     tx: 'tx',
@@ -20,6 +17,9 @@ export const blockbookMethods = {
     estimatefee: 'estimatefee',
 }
 
-export const fullNodeUri = process.env.TRX_FULL_NODE
-export const solidityNodeUri = process.env.TRX_SOLIDITY_NODE
-export const eventServerUri = process.env.TRX_EVENT_SEVER
+export const fullNodeUri = 'https://api.shasta.trongrid.io'
+export const solidityNodeUri = 'https://api.shasta.trongrid.io'
+export const eventServerUri = 'https://api.shasta.trongrid.io'
+
+export const trxTokenContractAddress = 'TJCSDZAd5Qu9cKunfnKpRAyhnDRyKA8zPD'
+export const trxReadOnlyPrivateKey = 'DC3AEC73E3A613B84B8AAB4FD289947A885F7BB00A0075912DFB2C8350A7B622'

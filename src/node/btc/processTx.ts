@@ -5,14 +5,14 @@ import { WrapMessage } from "../models/Message.process"
 import { collectionNames, db } from "../mongo"
 import { tronWeb } from "../trx/tronWeb"
 
-const processWrapEvent = async (tx: any) => { }
-const processUnWrapEvent = async (tx: any) => { }
+const processWrapTx = async (raw: any) => { }
+const processUnWrapTx = async (raw: any) => { }
 
 const processTx = async () => {
     try {
-        const unprocessedBtcTx = await db.collection(collectionNames.btcTxs).findOne({ processed: false }, { sort: { "raw.blockHeight": 1 }, projection: { _id: false, "raw.txid": true, "raw.vin": true, "raw.vout": true, "raw.blockTime": true } })
+        const unprocessedTx = await db.collection(collectionNames.btcTxs).findOne({ processed: false }, { sort: { "raw.blockHeight": 1 }, projection: { _id: false, "raw.txid": true, "raw.vin": true, "raw.vout": true, "raw.blockTime": true } })
 
-        const raw = unprocessedBtcTx?.raw
+        const raw = unprocessedTx?.raw
 
         console.log({ raw })
 
@@ -22,7 +22,7 @@ const processTx = async () => {
 
         console.log({ type })
 
-        type === WrapperEvent.Wrap ? await processWrapEvent(raw) : await processWrapEvent(raw)
+        type === WrapperEvent.Wrap ? await processWrapTx(raw) : await processUnWrapTx(raw)
 
         // if (type === WrapperEvent.Wrap) {
         //     // process Wrap Event

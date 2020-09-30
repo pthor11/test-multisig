@@ -1,6 +1,6 @@
 import { payments, ECPair, address, Psbt } from "bitcoinjs-lib";
 import * as coinSelect from "coinselect";
-import { blockbookMethods, network } from "./config";
+import { blockbookMethods, network, trxTokenContractAddress } from "./config";
 import { callBlockbook } from "./blockbook";
 import { tronWeb } from "./tronWeb";
 
@@ -173,7 +173,7 @@ const sendTx = async (params: { privateKey: string, amount: number, toAdress: st
             script: payments.embed({ data: [Buffer.from(params.message, 'utf-8')], network }).output!,
             value: 0
         })
-        
+
         await psbt.signAllInputsAsync(ECPair.fromWIF(params.privateKey, network))
 
         psbt.finalizeAllInputs()
@@ -195,6 +195,24 @@ const sendTx = async (params: { privateKey: string, amount: number, toAdress: st
     }
 }
 
+const getWbtcBalance = async (params: { trxAddress: string }) => {
+    try {
+        if (!tronWeb.isAddress(params?.trxAddress)) throw new Error(`invalid trx address`)
+
+        const contract = await tronWeb.contract().at(trxTokenContractAddress)
+
+        const result = await contract.balanceOf(params?.trxAddress).call()
+
+        console.log({ result })
+
+        return tronWeb.toDecimal(result)
+    } catch (e) {
+        throw e
+    }
+}
+
+// getWbtcBalance({trxAddress: 'TDmYMKhVZTX7Xc2jEtmGmLNp5i8uCEnarT'})
+
 // console.log(getBtcAddress({ privateKey: 'cVj5T5wAgKUyo367w1ezHxXrBXXnG8BL5eAbVqVceya1ikxjLDNz' }))
 // getBtcBalance({ address: 'mi7JyT8UAG6Ksd4LJbVuX866ssomxAZAY9' }).then(console.log)
 // getFeeRate().then(console.log)
@@ -208,6 +226,7 @@ const sendTx = async (params: { privateKey: string, amount: number, toAdress: st
 // }).then(console.log)
 
 export {
+    getWbtcBalance,
     getBtcAddress,
     getBtcBalance,
     getFeeRate,
