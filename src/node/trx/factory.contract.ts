@@ -91,5 +91,3 @@ export {
     triggerFactoryContract,
     getFactoryContractEventResults
 }
-
-getFactoryContractEventResults()
