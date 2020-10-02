@@ -33,6 +33,7 @@ const processWrapTx = async (raw: any) => {
         // sent Wrap Event to trx process
         const wrapMessage: WrapMessage = {
             btcHash: raw.txid,
+            btcTime: new Date(raw.blockTime * 1000),
             userTrxAddress,
             userAmount
         }

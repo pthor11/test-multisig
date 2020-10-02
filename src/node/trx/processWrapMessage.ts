@@ -11,6 +11,8 @@ const processWrapMessage = async (msg: WrapMessage) => {
 
         console.log({ trxHash })
     } catch (e) {
+        console.error(`trx processWrapMessage error. Retrying ...`)
+        processWrapMessage(msg)
         throw e
     }
 }

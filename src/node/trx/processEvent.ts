@@ -1,12 +1,110 @@
-import { multisigAddress } from "../config"
-import { BtcTxProcessStatus } from "../models/BtcTx"
+import { address } from "bitcoinjs-lib"
 import { WrapperEvent } from "../models/WrapperEvent"
-import { WrapMessage } from "../models/Message.process"
+import { UnWrapMessage} from "../models/Message.process"
 import { collectionNames, db } from "../mongo"
-import { tronWeb } from "../trx/tronWeb"
+import { TrxEventProcessStatus } from "../models/TrxEvent"
+import { network } from "../config"
 
-const processWrapEvent = async (event: any) => { }
-const processUnWrapEvent = async (event: any) => { }
+const isValidBtcAddress = (params: { address: string }): boolean => {
+    try {
+        address.toOutputScript(params.address, network)
+        return true
+    } catch (e) {
+        return false
+    }
+}
+
+const processWrapEvent = async (raw: any) => {
+    try {
+        const trxHash = raw.transaction
+        const trxTime = raw.timestamp
+        const btcHash = raw.result.txId
+
+        await Promise.all([
+            db.collection(collectionNames.wraps).updateOne({ btcHash }, {
+                $set: {
+                    trxHash,
+                    trxTime,
+                    updatedAt: new Date()
+                }
+            }, { upsert: true }),
+            db.collection(collectionNames.trxEvents).updateOne({ "raw.transaction": raw.transaction }, {
+                $set: {
+                    processed: true,
+                    updatedAt: new Date()
+                }
+            })
+        ])
+
+    } catch (e) {
+        throw e
+    }
+}
+
+const processUnWrapEvent = async (raw: any) => {
+    try {
+        console.log({unwrap: raw});
+
+        const trxHash = raw.transaction
+        const trxTime = new Date(raw.timestamp)
+        const userBtcAddress = raw.result.toAddress
+        const userAmount = parseInt(raw.result.amount)
+
+        const unwrapMessage: UnWrapMessage = {
+            trxHash,
+            trxTime,
+            userBtcAddress,
+            userAmount
+        }
+        
+        if (!isValidBtcAddress({ address: userBtcAddress })) {
+            await db.collection(collectionNames.trxEvents).updateOne({ "raw.transaction": raw.transaction }, {
+                $set: {
+                    processed: true,
+                    status: TrxEventProcessStatus.errorInvalidAddress,
+                    updatedAt: new Date()
+                }
+            })
+
+            return false
+        }
+
+        if (userAmount <= 546) {
+            await db.collection(collectionNames.trxEvents).updateOne({ "raw.transaction": raw.transaction }, {
+                $set: {
+                    processed: true,
+                    status: TrxEventProcessStatus.errorInvalidAmount,
+                    updatedAt: new Date()
+                }
+            })
+
+            return false
+        }
+
+        if (!process.send) throw new Error(`process.send not found to send unwrap message`)
+
+        process.send(unwrapMessage)
+
+        await Promise.all([
+            db.collection(collectionNames.unwraps).insertOne({
+                trxHash,
+                trxTime,
+                userBtcAddress,
+                userAmount,
+                createdAt: new Date()
+            }),
+            db.collection(collectionNames.trxEvents).updateOne({ "raw.transaction": raw.transaction }, {
+                $set: {
+                    process: true,
+                    status: TrxEventProcessStatus.sentUnWrapMessageToProcessBtc,
+                    updatedAt: new Date()
+                }
+            })
+        ])
+    } catch (e) {
+        throw e
+    }
+}
 
 const processEvent = async () => {
     try {
@@ -14,67 +112,17 @@ const processEvent = async () => {
 
         const raw = unprocessedEvent?.raw
 
-        console.log({ raw })
-
         if (!raw) return setTimeout(processEvent, 1000)
 
         switch (raw.name) {
             case WrapperEvent.Wrap:
                 await processWrapEvent(raw)
                 break;
-            case WrapperEvent.UnWrap:
+            case WrapperEvent.UnWrap:            
                 await processUnWrapEvent(raw)
                 break;
 
             default: throw new Error(`contract event ${raw.name} is not supported`)
-        }
-
-        if (raw.name === WrapperEvent.Wrap) {
-            // process Wrap Event
-            // const wrapOutput = raw.vout.find(output => output.isAddress && output.addresses.find(address => address === multisigAddress))
-            // const op_returnOutput = raw.vout.find(output => !output.isAddress && output.addresses.find(address => address.includes('OP_RETURN')))
-
-            // if (!wrapOutput) throw new Error(`wrapOutput not found`)
-
-            // const subHex = op_returnOutput ? op_returnOutput.hex.substr(4) : ''
-
-            // const userTrxAddress = Buffer.from(subHex, 'hex').toString()
-
-            // const userAmount = parseInt(wrapOutput.value)
-
-            // console.log({ wrapOutput, op_returnOutput, userTrxAddress, userAmount })
-
-            // if (tronWeb.isAddress(userTrxAddress)) {
-            //     // sent Wrap Event to trx process
-            //     const wrapMessage: WrapMessage = {
-            //         btcHash: raw.txid,
-            //         userTrxAddress,
-            //         userAmount
-            //     }
-
-            //     if (!process.send) throw new Error(`process.send not found to send wrap message`)
-
-            //     process.send(wrapMessage)
-
-            //     await Promise.all([
-            //         db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, { $set: { processed: true, status: BtcTxProcessStatus.sentWrapEventToTrx, updatedAt: new Date() } }),
-            //         db.collection(collectionNames.wraps).insertOne({
-            //             btcHash: raw.txid,
-            //             btcTime: new Date(raw.blockTime * 1000),
-            //             userTrxAddress,
-            //             userAmount,
-            //             createdAt: new Date()
-            //         })
-            //     ])
-
-            // } else {
-            //     // update to db with status 
-            //     await db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, { $set: { processed: true, status: BtcTxProcessStatus.invalidUserTrxAddress, updatedAt: new Date() } })
-            // }
-        } else {
-            // process UnWrap Event
-            // update to db with status 
-            // await db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, { $set: { processed: true, status: BtcTxProcessStatus.unknown, updatedAt: new Date() } })
         }
 
         setTimeout(processEvent, 100)

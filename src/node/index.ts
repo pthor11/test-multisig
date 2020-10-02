@@ -9,7 +9,7 @@ const start = async () => {
         trxProcess.on('error', e => { throw { trx: e } })
 
         btcProcess.on('message', msg => trxProcess.send(msg)) // passing msg from btc process to trx process
-        // trxProcess.on('message', msg => btcProcess.send(msg)) // passing msg from trx process to btc process
+        trxProcess.on('message', msg => btcProcess.send(msg)) // passing msg from trx process to btc process
     } catch (e) {
         throw e
     }

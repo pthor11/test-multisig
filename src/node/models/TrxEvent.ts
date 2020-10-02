@@ -1,10 +1,11 @@
 import { IndexSpecification } from "mongodb";
 
 enum TrxEventProcessStatus {
-    sentUnWrapEventToBtc = 'sentUnWrapEventToBtc',
-    updateSuccessWrapEvent = 'updateSuccessWrapEvent',
-    invalidUserBtcAddress = 'invalidUserBtcAddress',
-    unknown = 'unknown'
+    sentUnWrapMessageToProcessBtc = 'sentUnWrapMessageToBtcProcess',
+    sentSignedPsbtToKafka = 'sentSignedPsbtToKafka',
+    errorInvalidAddress = 'errorInvalidAddress',
+    errorInvalidAmount = 'errorInvalidAmount',
+    success = 'success'
 }
 
 type TrxEvent = {
