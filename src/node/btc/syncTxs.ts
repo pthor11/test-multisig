@@ -51,13 +51,11 @@ const syncTxs = async () => {
         const count = await db.collection(collectionNames.btcTxs).estimatedDocumentCount()
         const txs = count ? await updateTxs() : await getAllTxs()
 
-        if (txs.length > 0) await db.collection(collectionNames.btcTxs).insertMany(txs.map(tx => {
-            return {
-                processed: false,
-                raw: tx,
-                createdAt: new Date()
-            }
-        }))
+        if (txs.length > 0) await db.collection(collectionNames.btcTxs).insertMany(txs.reduce((total, tx) => tx.blockHeight !== -1 ? [...total, {
+            processed: false,
+            raw: tx,
+            createdAt: new Date()
+        }] : total, []))
 
         setTimeout(syncTxs, 1000)
     } catch (e) {

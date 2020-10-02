@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "",
     "scripts": {
-        "build:all": "rm -rf dist && tsc",
+        "build": "rm -rf dist && tsc",
         "start:node": "node dist/node/index.js",
         "dev:node": "ts-node src/node/index.ts",
         "dev:node:log": "nodemon --watch 'src/**/*.ts' --exec ts-node src/node/index.ts",

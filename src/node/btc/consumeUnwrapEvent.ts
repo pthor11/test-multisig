@@ -1,181 +1,181 @@
-import { client, collectionNames, db } from "./mongo"
-import * as coinSelect from "coinselect";
-import { payments, Psbt, address, ECPair } from "bitcoinjs-lib";
-import { blockbookMethods, btcAddress, btcPrivateKey, KafkaConfig, multisigAddress, network, publickeys, signatureMinimum } from "../config";
-import { callBlockbook } from "./blockbook";
-import { producer } from "./kafka";
-import { psbts } from "./psbts";
+// import { client, collectionNames, db } from "../mongo"
+// import * as coinSelect from "coinselect";
+// import { payments, Psbt, address, ECPair } from "bitcoinjs-lib";
+// import { blockbookMethods, btcAddress, btcPrivateKey, /* KafkaConfig, */ multisigAddress, network, publickeys, signatureMinimum } from "../config";
+// import { callBlockbook } from "./blockbook";
+// // import { producer } from "./kafka";
+// import { psbts } from "./psbts";
 
-const updateUnwrapEvent = async (transaction: string) => {
-    const session = client.startSession()
-    session.startTransaction()
-    try {
-        const { value } = await db.collection(collectionNames.unwraps).findOneAndUpdate({ "result.transaction": transaction }, {
-            $addToSet: { "consumer.signs": btcAddress },
-            $set: { updateAt: new Date() }
-        }, {
-            returnOriginal: true,
-            session
-        })
+// const updateUnwrapEvent = async (transaction: string) => {
+//     const session = client.startSession()
+//     session.startTransaction()
+//     try {
+//         const { value } = await db.collection(collectionNames.unwraps).findOneAndUpdate({ "result.transaction": transaction }, {
+//             $addToSet: { "consumer.signs": btcAddress },
+//             $set: { updateAt: new Date() }
+//         }, {
+//             returnOriginal: true,
+//             session
+//         })
 
-        if (!value) throw new Error(`transaction ${transaction} not found to unwrap`)
+//         if (!value) throw new Error(`transaction ${transaction} not found to unwrap`)
 
-        if (value.consumer?.signs?.includes(btcAddress)) {
-            await session.abortTransaction()
-        } else {
-            await session.commitTransaction()
-        }
+//         if (value.consumer?.signs?.includes(btcAddress)) {
+//             await session.abortTransaction()
+//         } else {
+//             await session.commitTransaction()
+//         }
 
-        session.endSession()
-    } catch (e) {
-        await session.abortTransaction()
-        session.endSession()
-        if (e.code === 112) return updateUnwrapEvent(transaction)
-        throw e
-    }
-}
+//         session.endSession()
+//     } catch (e) {
+//         await session.abortTransaction()
+//         session.endSession()
+//         if (e.code === 112) return updateUnwrapEvent(transaction)
+//         throw e
+//     }
+// }
 
-export const consumeUnwrapEvents = async (data: any) => {
-    try {
-        console.log({ data })
+// export const consumeUnwrapEvents = async (data: any) => {
+//     try {
+//         console.log({ data })
 
-        const trxHash = data.trxHash
-        const userBtcAddress = data.userBtcAddress
-        const amount = data.amount
+//         const trxHash = data.trxHash
+//         const userBtcAddress = data.userBtcAddress
+//         const amount = data.amount
 
-        if (!trxHash) throw new Error(`consumer received unwrap message with no trxHash`)
+//         if (!trxHash) throw new Error(`consumer received unwrap message with no trxHash`)
         
-        if (!userBtcAddress) throw new Error(`consumer received unwrap message with no user btc address`)
+//         if (!userBtcAddress) throw new Error(`consumer received unwrap message with no user btc address`)
 
-        if (!Number.isInteger(amount)) throw new Error(`consumer received unwrap message with invalid amount ${amount}`)
+//         if (!Number.isInteger(amount)) throw new Error(`consumer received unwrap message with invalid amount ${amount}`)
 
-        if (!address.toOutputScript(userBtcAddress, network)) throw new Error(`consumer received unwrap message with invalid address ${amount} for network ${network}`)
+//         if (!address.toOutputScript(userBtcAddress, network)) throw new Error(`consumer received unwrap message with invalid address ${amount} for network ${network}`)
 
-        const { inputs, outputs, fee } = await selectUtxos(multisigAddress, userBtcAddress, amount)
+//         const { inputs, outputs, fee } = await selectUtxos(multisigAddress, userBtcAddress, amount)
 
-        console.log({ inputs, outputs, fee })
+//         console.log({ inputs, outputs, fee })
 
-        const transactions: any[] = await getTxDetails(inputs.map(input => input.txId))
+//         const transactions: any[] = await getTxDetails(inputs.map(input => input.txId))
 
-        const psbt = new Psbt({ network })
+//         const psbt = new Psbt({ network })
 
-        for (let i = 0; i < inputs.length; i++) {
-            psbt.addInput({
-                hash: inputs[i].txId,
-                index: inputs[i].vout,
-                nonWitnessUtxo: Buffer.from(transactions[i].hex, 'hex'),
-                redeemScript: payments.p2ms({
-                    m: signatureMinimum,
-                    pubkeys: publickeys.map(publickey => Buffer.from(publickey, 'hex')),
-                    network
-                }).output
-            })
-        }
+//         for (let i = 0; i < inputs.length; i++) {
+//             psbt.addInput({
+//                 hash: inputs[i].txId,
+//                 index: inputs[i].vout,
+//                 nonWitnessUtxo: Buffer.from(transactions[i].hex, 'hex'),
+//                 redeemScript: payments.p2ms({
+//                     m: signatureMinimum,
+//                     pubkeys: publickeys.map(publickey => Buffer.from(publickey, 'hex')),
+//                     network
+//                 }).output
+//             })
+//         }
 
-        for (let i = 0; i < outputs.length; i++) {
-            psbt.addOutput({
-                address: outputs[i].address || multisigAddress,
-                value: outputs[i].value
-            })
-        }
+//         for (let i = 0; i < outputs.length; i++) {
+//             psbt.addOutput({
+//                 address: outputs[i].address || multisigAddress,
+//                 value: outputs[i].value
+//             })
+//         }
 
-        const basePsbtHex = psbt.toBase64()
-        console.log({ basePsbtHex })
+//         const basePsbtHex = psbt.toBase64()
+//         console.log({ basePsbtHex })
 
 
-        await psbt.signAllInputsAsync(ECPair.fromWIF(btcPrivateKey, network))
+//         await psbt.signAllInputsAsync(ECPair.fromWIF(btcPrivateKey, network))
 
-        const signedPsbtHex = psbt.toBase64()
-        console.log({ signedPsbtHex })
+//         const signedPsbtHex = psbt.toBase64()
+//         console.log({ signedPsbtHex })
 
-        await updateUnwrapEvent(trxHash)
+//         await updateUnwrapEvent(trxHash)
 
-        const record = await producer.send({
-            topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.sign : KafkaConfig.topics.sign,
-            messages: [{
-                value: JSON.stringify({
-                    trxHash,
-                    basePsbtHex,
-                    signedPsbtHex
-                })
-            }]
-        })
+//         const record = await producer.send({
+//             topic: KafkaConfig.topicPrefix ? KafkaConfig.topicPrefix + '.' + KafkaConfig.topics.sign : KafkaConfig.topics.sign,
+//             messages: [{
+//                 value: JSON.stringify({
+//                     trxHash,
+//                     basePsbtHex,
+//                     signedPsbtHex
+//                 })
+//             }]
+//         })
 
-        console.log({ record })
+//         console.log({ record })
 
-        psbts[trxHash] = {
-            baseHex: basePsbtHex,
-            signedHexs: [signedPsbtHex]
-        }
+//         psbts[trxHash] = {
+//             baseHex: basePsbtHex,
+//             signedHexs: [signedPsbtHex]
+//         }
 
-        console.log({ psbts: JSON.stringify(psbts) })
-    } catch (e) {
-        console.error(e)
-        throw e
-    }
-}
+//         console.log({ psbts: JSON.stringify(psbts) })
+//     } catch (e) {
+//         console.error(e)
+//         throw e
+//     }
+// }
 
-const getUtxos = async (address: string): Promise<any[]> => {
-    try {
-        const utxos = await callBlockbook({ method: blockbookMethods.utxo, data: address })
+// const getUtxos = async (address: string): Promise<any[]> => {
+//     try {
+//         const utxos = await callBlockbook({ method: blockbookMethods.utxo, data: address })
 
-        return utxos
-    } catch (e) {
-        throw e
-    }
-}
+//         return utxos
+//     } catch (e) {
+//         throw e
+//     }
+// }
 
-const getFeeRate = async () => {
-    try {
-        const result = await callBlockbook({ method: blockbookMethods.estimatefee, data: 2 })
+// const getFeeRate = async () => {
+//     try {
+//         const result = await callBlockbook({ method: blockbookMethods.estimatefee, data: 2 })
 
-        const feeRateKilobytePerSatoshi = Number(result?.result)
+//         const feeRateKilobytePerSatoshi = Number(result?.result)
 
-        if (!feeRateKilobytePerSatoshi) throw new Error(`estimate feerate from blockbook is invalid ${result?.result}`)
+//         if (!feeRateKilobytePerSatoshi) throw new Error(`estimate feerate from blockbook is invalid ${result?.result}`)
 
-        return feeRateKilobytePerSatoshi * (10 ** 5)
-    } catch (e) {
-        throw e
-    }
-}
+//         return feeRateKilobytePerSatoshi * (10 ** 5)
+//     } catch (e) {
+//         throw e
+//     }
+// }
 
-const selectUtxos = async (fromAddress: string, toAddress: string, value: number) => {
-    try {
-        let utxos: any[] = await getUtxos(fromAddress)
+// const selectUtxos = async (fromAddress: string, toAddress: string, value: number) => {
+//     try {
+//         let utxos: any[] = await getUtxos(fromAddress)
 
-        utxos = utxos.map(utxo => { return { txId: utxo.txid, vout: utxo.vout, value: Number(utxo.value) } })
+//         utxos = utxos.map(utxo => { return { txId: utxo.txid, vout: utxo.vout, value: Number(utxo.value) } })
 
-        const feeRate = await getFeeRate()
+//         const feeRate = await getFeeRate()
 
-        const targets = [
-            {
-                address: toAddress,
-                value
-            }
-        ]
+//         const targets = [
+//             {
+//                 address: toAddress,
+//                 value
+//             }
+//         ]
 
-        let { inputs, outputs, fee } = coinSelect(utxos, targets, feeRate)
+//         let { inputs, outputs, fee } = coinSelect(utxos, targets, feeRate)
 
-        if (!inputs || !outputs) throw new Error(`utxos selections failed because no solution was found for address ${address} with value ${value}`)
+//         if (!inputs || !outputs) throw new Error(`utxos selections failed because no solution was found for address ${address} with value ${value}`)
 
-        const p2shFee = 10 + inputs.length * 298 + outputs.length * 32
+//         const p2shFee = 10 + inputs.length * 298 + outputs.length * 32
 
-        outputs.forEach(output => output.value = output.address ? output.value : output.value + fee - p2shFee)
+//         outputs.forEach(output => output.value = output.address ? output.value : output.value + fee - p2shFee)
 
-        fee = p2shFee
+//         fee = p2shFee
 
-        return { inputs, outputs, fee }
-    } catch (e) {
-        throw e
-    }
-}
+//         return { inputs, outputs, fee }
+//     } catch (e) {
+//         throw e
+//     }
+// }
 
-const getTxDetails = async (hashes: string[]): Promise<any[]> => {
-    try {
-        const results = await Promise.all(hashes.map(hash => callBlockbook({ method: blockbookMethods.tx, data: hash })))
+// const getTxDetails = async (hashes: string[]): Promise<any[]> => {
+//     try {
+//         const results = await Promise.all(hashes.map(hash => callBlockbook({ method: blockbookMethods.tx, data: hash })))
 
-        return results
-    } catch (e) {
-        throw e
-    }
-}
+//         return results
+//     } catch (e) {
+//         throw e
+//     }
+// }

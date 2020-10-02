@@ -1,6 +1,6 @@
-import { client, collectionNames, db } from "./mongo"
+import { client, collectionNames, db } from "../mongo"
 import { Psbt } from "bitcoinjs-lib";
-import { blockbookMethods, btcAddress, network, signatureMinimum } from "./config";
+import { blockbookMethods, btcAddress, network, signatureMinimum } from "../config";
 import { callBlockbook } from "./blockbook";
 import { psbts } from "./psbts";
 

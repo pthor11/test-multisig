@@ -14,7 +14,7 @@ services:
     container_name: wrapper-node
     build:
       context: .
-      dockerfile: Dockerfile.btc
+      dockerfile: Dockerfile.node
     depends_on:
       - mongo
     links:

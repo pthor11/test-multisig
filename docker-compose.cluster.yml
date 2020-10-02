@@ -15,7 +15,7 @@ services:
     container_name: wrapper-node-1
     build:
       context: .
-      dockerfile: Dockerfile.btc
+      dockerfile: Dockerfile.node
     depends_on:
       - wrapper-mongo-1
     links:
@@ -37,7 +37,7 @@ services:
     container_name: wrapper-node-2
     build:
       context: .
-      dockerfile: Dockerfile.btc
+      dockerfile: Dockerfile.node
     depends_on:
       - wrapper-mongo-2
     links:
@@ -59,7 +59,7 @@ services:
     container_name: wrapper-node-3
     build:
       context: .
-      dockerfile: Dockerfile.btc
+      dockerfile: Dockerfile.node
     depends_on:
       - wrapper-mongo-3
     links:

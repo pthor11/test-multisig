@@ -1,6 +1,6 @@
-import { factoryContractAddress, maxEventReturnSize } from "../node/config"
-import { WrapperEvent } from "../node/models/WrapperEvent"
-import { collectionNames, db } from "../node/mongo"
+import { factoryContractAddress, maxEventReturnSize } from "../config"
+import { WrapperEvent } from "../models/WrapperEvent"
+import { collectionNames, db } from "../mongo"
 import { tronWeb } from "./tronWeb"
 
 let factoryContract: any

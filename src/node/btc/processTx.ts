@@ -5,8 +5,76 @@ import { WrapMessage } from "../models/Message.process"
 import { collectionNames, db } from "../mongo"
 import { tronWeb } from "../trx/tronWeb"
 
-const processWrapTx = async (raw: any) => { }
-const processUnWrapTx = async (raw: any) => { }
+const processWrapTx = async (raw: any) => {
+    try {
+        const ouput = raw.vout.find(output => output.isAddress && output.addresses.find(address => address === multisigAddress))
+        const opreturnOutput = raw.vout.find(output => !output.isAddress && output.addresses.find(address => address.includes('OP_RETURN')))
+
+        const subHex = opreturnOutput ? opreturnOutput.hex.substr(4) : ''
+
+        const userTrxAddress = Buffer.from(subHex, 'hex').toString()
+
+        const userAmount = parseInt(ouput.value)
+
+        console.log({ raw, userTrxAddress, userAmount, isTrxAddress: tronWeb.isAddress(userTrxAddress) })
+
+        if (!tronWeb.isAddress(userTrxAddress)) {
+            await db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, {
+                $set: {
+                    processed: true,
+                    status: BtcTxProcessStatus.invalidUserTrxAddress,
+                    updatedAt: new Date()
+                }
+            })
+
+            return false
+        }
+
+        // sent Wrap Event to trx process
+        const wrapMessage: WrapMessage = {
+            btcHash: raw.txid,
+            userTrxAddress,
+            userAmount
+        }
+
+        if (!process.send) throw new Error(`process.send not found to send wrap message`)
+
+        process.send(wrapMessage)
+
+        await Promise.all([
+            db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, {
+                $set: {
+                    processed: true,
+                    status: BtcTxProcessStatus.sentWrapEventToTrx,
+                    updatedAt: new Date()
+                }
+            }),
+            db.collection(collectionNames.wraps).insertOne({
+                btcHash: raw.txid,
+                btcTime: new Date(raw.blockTime * 1000),
+                userTrxAddress,
+                userAmount,
+                createdAt: new Date()
+            })
+        ])
+    } catch (e) {
+        throw e
+    }
+}
+
+const processUnWrapTx = async (raw: any) => {
+    try {
+        await db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, {
+            $set: {
+                processed: true,
+                status: 'UnWrap pending ....',
+                updatedAt: new Date()
+            }
+        })
+    } catch (e) {
+        throw e
+    }
+}
 
 const processTx = async () => {
     try {
@@ -14,63 +82,15 @@ const processTx = async () => {
 
         const raw = unprocessedTx?.raw
 
-        console.log({ raw })
+        // console.log({ raw })
 
         if (!raw) return setTimeout(processTx, 1000)
 
         const type = raw.vin.find(input => input.isAddress && input.addresses.includes(multisigAddress)) ? WrapperEvent.UnWrap : WrapperEvent.Wrap
 
-        console.log({ type })
+        console.log({ raw, type })
 
         type === WrapperEvent.Wrap ? await processWrapTx(raw) : await processUnWrapTx(raw)
-
-        // if (type === WrapperEvent.Wrap) {
-        //     // process Wrap Event
-        //     const wrapOutput = raw.vout.find(output => output.isAddress && output.addresses.find(address => address === multisigAddress))
-        //     const op_returnOutput = raw.vout.find(output => !output.isAddress && output.addresses.find(address => address.includes('OP_RETURN')))
-
-        //     if (!wrapOutput) throw new Error(`wrapOutput not found`)
-
-        //     const subHex = op_returnOutput ? op_returnOutput.hex.substr(4) : ''
-
-        //     const userTrxAddress = Buffer.from(subHex, 'hex').toString()
-
-        //     const userAmount = parseInt(wrapOutput.value)
-
-        //     console.log({ wrapOutput, op_returnOutput, userTrxAddress, userAmount })
-
-        //     if (tronWeb.isAddress(userTrxAddress)) {
-        //         // sent Wrap Event to trx process
-        //         const wrapMessage: WrapMessage = {
-        //             btcHash: raw.txid,
-        //             userTrxAddress,
-        //             userAmount
-        //         }
-
-        //         if (!process.send) throw new Error(`process.send not found to send wrap message`)
-
-        //         process.send(wrapMessage)
-
-        //         await Promise.all([
-        //             db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, { $set: { processed: true, status: BtcTxProcessStatus.sentWrapEventToTrx, updatedAt: new Date() } }),
-        //             db.collection(collectionNames.wraps).insertOne({
-        //                 btcHash: raw.txid,
-        //                 btcTime: new Date(raw.blockTime * 1000),
-        //                 userTrxAddress,
-        //                 userAmount,
-        //                 createdAt: new Date()
-        //             })
-        //         ])
-
-        //     } else {
-        //         // update to db with status 
-        //         await db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, { $set: { processed: true, status: BtcTxProcessStatus.invalidUserTrxAddress, updatedAt: new Date() } })
-        //     }
-        // } else {
-        //     // process UnWrap Event
-        //     // update to db with status 
-        //     // await db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, { $set: { processed: true, status: BtcTxProcessStatus.unknown, updatedAt: new Date() } })
-        // }
 
         setTimeout(processTx, 100)
     } catch (e) {

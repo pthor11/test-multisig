@@ -8,7 +8,7 @@ const startTrx = async () => {
 
         await syncEvents()
 
-        // process.on('message', msg => processWrapMessage(msg))
+        process.on('message', msg => processWrapMessage(msg))
     } catch (e) {
         throw e
     }

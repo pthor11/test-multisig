@@ -1,5 +1,5 @@
 import { IndexSpecification, ObjectID } from "mongodb"
-import { client, collectionNames, db } from "../mongo"
+import { client, collectionNames, db } from "../../mongo"
 
 export type Wrap = {
     createdAt: Date

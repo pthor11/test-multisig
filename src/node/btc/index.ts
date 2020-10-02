@@ -12,7 +12,7 @@ const startBtc = async() => {
         
         // await connectKafkaConsumer()
 
-        // await processBtcTx()
+        await processTx()
 
     } catch (e) {
         throw e
