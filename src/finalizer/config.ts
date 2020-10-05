@@ -36,6 +36,7 @@ export const publickeys = process.env.BTC_PUBLICKEYS.split(',')
 if (!process.env.KAFKA_CLIENT_ID_FINALIZER) throw new Error(`Kafka client id finalizer must be provided`)
 if (!process.env.KAFKA_GROUP_ID_FINALIZER) throw new Error(`Kafka group id finalizer must be provided`)
 if (!process.env.KAFKA_BROKERS) throw new Error(`Kafka brokers must be provided`)
+if (!process.env.KAFKA_TOPIC_PSBT) throw new Error(`Kafka topic psbt must be provided`)
 if (process.env.KAFKA_MECHANISM && !process.env.KAFKA_USERNAME) throw new Error(`Kafka username must be provided with mechanism ${process.env.KAFKA_MECHANISM}`)
 if (process.env.KAFKA_MECHANISM && !process.env.KAFKA_PASSWORD) throw new Error(`Kafka password must be provided with mechanism ${process.env.KAFKA_MECHANISM}`)
 
@@ -47,6 +48,6 @@ export const kafkaConfig = {
     username: process.env.KAFKA_USERNAME,
     password: process.env.KAFKA_PASSWORD,
     topic: {
-        psbt: 'psbt-debug'
+        psbt: process.env.KAFKA_TOPIC_PSBT
     }
 }

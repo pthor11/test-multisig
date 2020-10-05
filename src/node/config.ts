@@ -3,8 +3,8 @@ import { networks } from "bitcoinjs-lib"
 
 config()
 
-if (!process.env.NODE_MONGO_URI) throw new Error(`node mongo uri must be provided`)
-export const mongoUri = process.env.NODE_MONGO_URI
+if (!process.env.MONGO_URI_NODE) throw new Error(`mongo uri node must be provided`)
+export const mongoUri = process.env.MONGO_URI_NODE
 
 if (!process.env.BTC_NETWORK) throw new Error(`btc network must be provided mainnet or testnet`)
 export const network = process.env.NETWORK === 'mainnet' ? networks.bitcoin : networks.testnet
@@ -52,7 +52,8 @@ export const maxEventReturnSize = 2 //200
 
 export const eventRequestInterval = 10000
 
-if (!process.env.KAFKA_CLIENT_ID) throw new Error(`Kafka client id must be provided`)
+if (!process.env.KAFKA_CLIENT_ID_NODE) throw new Error(`Kafka client id node must be provided`)
+if (!process.env.KAFKA_TOPIC_PSBT) throw new Error(`Kafka topic psbt must be provided`)
 if (!process.env.KAFKA_BROKERS) throw new Error(`Kafka brokers must be provided`)
 if (process.env.KAFKA_MECHANISM && !process.env.KAFKA_USERNAME) throw new Error(`Kafka username must be provided with mechanism ${process.env.KAFKA_MECHANISM}`)
 if (process.env.KAFKA_MECHANISM && !process.env.KAFKA_PASSWORD) throw new Error(`Kafka password must be provided with mechanism ${process.env.KAFKA_MECHANISM}`)
@@ -64,6 +65,6 @@ export const kafkaConfig = {
     username: process.env.KAFKA_USERNAME,
     password: process.env.KAFKA_PASSWORD,
     topic: {
-        psbt: 'psbt-debug'
+        psbt: process.env.KAFKA_TOPIC_PSBT
     }
 }

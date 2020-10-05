@@ -2,7 +2,6 @@ import { connect, Db, MongoClient } from "mongodb";
 import { mongoUri } from "./config";
 import { BtcTxIndexes } from "./models/BtcTx";
 import { TrxEventIndexes } from "./models/TrxEvent";
-// import { WrapIndexes } from "./models/Wrap";
 
 export let client: MongoClient
 export let db: Db
@@ -16,8 +15,6 @@ export const collectionNames = {
 }
 
 export const connectDb = async () => {
-    if (!mongoUri) throw new Error(`BTC: mongo uri must be provided`)
-
     try {
         client = await connect(mongoUri, {
             useUnifiedTopology: true,

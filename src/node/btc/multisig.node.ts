@@ -18,7 +18,10 @@ const getUtxos = async (address: string): Promise<any[]> => {
 
 const getFeeRate = async () => {
     try {
-        const result = await callBlockbook({ method: blockbookMethods.estimatefee, data: 2 })
+        const result = await callBlockbook({
+            method: blockbookMethods.estimatefee,
+            data: 6
+        })
 
         const feeRateKilobytePerSatoshi = Number(result?.result)
 
