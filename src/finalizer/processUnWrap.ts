@@ -1,4 +1,4 @@
-import { signatureMinimum } from "./config"
+import { sendInterval, signatureMinimum } from "./config"
 import { UnWrap } from "./models/UnWrap"
 import { collectionNames, db } from "./mongo"
 
@@ -11,9 +11,9 @@ const processUnWrap = async () => {
 
         console.log({ readyUnWrap })
 
-        setTimeout(processUnWrap, 1000)
+        setTimeout(processUnWrap, sendInterval)
     } catch (e) {
-        setTimeout(processUnWrap, 1000)
+        setTimeout(processUnWrap, sendInterval)
         throw e
     }
 }

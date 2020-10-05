@@ -10,8 +10,6 @@ export const collectionNames = {
 }
 
 export const connectDb = async () => {
-    if (!mongoUri) throw new Error(`BTC: mongo uri must be provided`)
-
     try {
         client = await connect(mongoUri, {
             useUnifiedTopology: true,

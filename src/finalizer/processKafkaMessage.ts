@@ -18,9 +18,7 @@ const processKafkaMessage = async (payload: EachMessagePayload) => {
             $set: { updatedAt: new Date() },
             $setOnInsert: {
                 processed: false,
-                trxHash: data.trxHash,
                 base: data.base,
-                signeds: [data.signed],
                 createdAt: new Date()
             }
         }, { upsert: true })
