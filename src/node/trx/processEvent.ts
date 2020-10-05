@@ -1,6 +1,6 @@
 import { address } from "bitcoinjs-lib"
 import { WrapperEvent } from "../models/WrapperEvent"
-import { UnWrapMessage} from "../models/Message.process"
+import { UnWrapMessage } from "../models/Message.process"
 import { collectionNames, db } from "../mongo"
 import { TrxEventProcessStatus } from "../models/TrxEvent"
 import { network } from "../config"
@@ -43,7 +43,7 @@ const processWrapEvent = async (raw: any) => {
 
 const processUnWrapEvent = async (raw: any) => {
     try {
-        console.log({unwrap: raw});
+        console.log({ unwrap: raw });
 
         const trxHash = raw.transaction
         const trxTime = new Date(raw.timestamp)
@@ -56,7 +56,7 @@ const processUnWrapEvent = async (raw: any) => {
             userBtcAddress,
             userAmount
         }
-        
+
         if (!isValidBtcAddress({ address: userBtcAddress })) {
             await db.collection(collectionNames.trxEvents).updateOne({ "raw.transaction": raw.transaction }, {
                 $set: {
@@ -95,7 +95,7 @@ const processUnWrapEvent = async (raw: any) => {
             }),
             db.collection(collectionNames.trxEvents).updateOne({ "raw.transaction": raw.transaction }, {
                 $set: {
-                    process: true,
+                    processed: true,
                     status: TrxEventProcessStatus.sentUnWrapMessageToProcessBtc,
                     updatedAt: new Date()
                 }
@@ -118,7 +118,7 @@ const processEvent = async () => {
             case WrapperEvent.Wrap:
                 await processWrapEvent(raw)
                 break;
-            case WrapperEvent.UnWrap:            
+            case WrapperEvent.UnWrap:
                 await processUnWrapEvent(raw)
                 break;
 

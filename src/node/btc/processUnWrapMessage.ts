@@ -15,15 +15,15 @@ const processUnWrapMessage = async (msg: UnWrapMessage) => {
 
         // signing message and send to kafka
 
-        const { basePsbtHex, signedPsbtHex } = await createPsbtRawHex(msg)
+        const { base, signed } = await createPsbtRawHex(msg)
 
         const record = await producer.send({
             topic: kafkaConfig.topic.psbt,
             messages: [{
                 value: JSON.stringify({
                     trxHash: msg.trxHash,
-                    base: basePsbtHex,
-                    signed: signedPsbtHex
+                    base,
+                    signed
                 })
             }]
         })

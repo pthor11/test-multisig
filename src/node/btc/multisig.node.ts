@@ -80,7 +80,7 @@ const getTxDetails = async (hashes: string[]): Promise<any[]> => {
     }
 }
 
-const createPsbtRawHex = async (params: { userBtcAddress: string, userAmount: number }): Promise<{ basePsbtHex: string, signedPsbtHex: string }> => {
+const createPsbtRawHex = async (params: { userBtcAddress: string, userAmount: number }): Promise<{ base: string, signed: string }> => {
     try {
         const { inputs, outputs, fee } = await selectUtxos(multisigAddress, params.userBtcAddress, params.userAmount)
 
@@ -110,17 +110,17 @@ const createPsbtRawHex = async (params: { userBtcAddress: string, userAmount: nu
             })
         }
 
-        const basePsbtHex = psbt.toBase64()
+        const base = psbt.toBase64()
 
-        console.log({ basePsbtHex })
+        console.log({ base })
 
         await psbt.signAllInputsAsync(ECPair.fromWIF(btcPrivateKey, network))
 
-        const signedPsbtHex = psbt.toBase64()
+        const signed = psbt.toBase64()
 
-        console.log({ signedPsbtHex })
+        console.log({ signed })
 
-        return { basePsbtHex, signedPsbtHex }
+        return { base, signed }
 
     } catch (e) {
         throw e

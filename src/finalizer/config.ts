@@ -3,7 +3,8 @@ import { networks } from "bitcoinjs-lib"
 
 config()
 
-export const mongoUri = process.env.MONGO_URI
+if (!process.env.FINALIZER_MONGO_URI) throw new Error(`finalizer mongo uri must be provided`)
+export const mongoUri = process.env.FINALIZER_MONGO_URI
 
 if (!process.env.BTC_NETWORK) throw new Error(`btc network must be provided mainnet or testnet`)
 export const network = process.env.NETWORK === 'mainnet' ? networks.bitcoin : networks.testnet
