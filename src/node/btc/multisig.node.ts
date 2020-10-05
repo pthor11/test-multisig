@@ -1,5 +1,4 @@
 import { Psbt, payments, ECPair } from "bitcoinjs-lib"
-import * as coinSelect from "coinselect";
 import { network, multisigAddress, signatureMinimum, publickeys, btcPrivateKey, blockbookMethods } from "../config"
 import { callBlockbook } from "./blockbook"
 
@@ -33,41 +32,52 @@ const getFeeRate = async () => {
     }
 }
 
+const calculateTotalVin = (inputs: any[]) => inputs.reduce((total, input) => total + input.value, 0)
+const calculateTotalVout = (outputs: any[]) => outputs.reduce((total, output) => total + output.value, 0)
+const calculateByteSize = (inputs: any[], outputs: any[]) => 10 + inputs.length * 298 + outputs.length * 32
+const calculateFee = (inputs: any, outputs: any[], feeRate: number) => calculateByteSize(inputs, outputs) * feeRate
+
 const selectUtxos = async (fromAddress: string, toAddress: string, value: number) => {
     try {
-        let utxos: any[] = await getUtxos(fromAddress)
+        const utxos: any[] = await getUtxos(fromAddress)
 
-        utxos = utxos.map(utxo => { return { txId: utxo.txid, vout: utxo.vout, value: Number(utxo.value) } })
+        utxos.sort((utxo1, utxo2) => utxo1.value - utxo2.value).forEach(utxo => utxo.value = Number(utxo.value))
 
-        // console.log({ utxos })
+        console.log({ utxos: utxos.length })
 
         const feeRate = await getFeeRate()
 
-        // console.log({ feeRate })
+        console.log({ feeRate })
 
-        const targets = [
-            {
-                address: toAddress,
-                value
+
+        const inputs: any[] = []
+        const outputs: any[] = [{ address: toAddress, value }]
+
+        for (const utxo of utxos) {
+            console.log({ utxo })
+
+            inputs.push(utxo)
+
+            const totalVin = calculateTotalVin(inputs)
+            const totalVout = calculateTotalVout(outputs)
+            const fee = calculateFee(inputs, outputs, feeRate)
+            const change = totalVin - totalVout - fee
+
+            console.log({ totalVin, totalVout, fee, change })
+
+            if (change >= 0) {
+                const subChange = change - 32 * feeRate
+                console.log({ subChange })
+                if (subChange > 0) outputs.push({
+                    address: multisigAddress,
+                    value: subChange
+                })
+                break
             }
-        ]
 
-        // console.log({ targets })
+        }
 
-        let { inputs, outputs, fee } = coinSelect(utxos, targets, feeRate)
-
-        // console.log({ inputs, outputs, fee })
-
-
-        if (!inputs || !outputs) throw new Error(`utxos selections failed because no solution was found for address ${fromAddress} with value ${value}`)
-
-        const p2shFee = 10 + inputs.length * 298 + outputs.length * 32
-
-        outputs.forEach(output => output.value = output.address ? output.value : output.value + fee - p2shFee)
-
-        fee = p2shFee
-
-        return { inputs, outputs, fee }
+        return { inputs, outputs }
     } catch (e) {
         throw e
     }
@@ -85,17 +95,17 @@ const getTxDetails = async (hashes: string[]): Promise<any[]> => {
 
 const createPsbtRawHex = async (params: { userBtcAddress: string, userAmount: number }): Promise<{ base: string, signed: string }> => {
     try {
-        const { inputs, outputs, fee } = await selectUtxos(multisigAddress, params.userBtcAddress, params.userAmount)
+        const { inputs, outputs } = await selectUtxos(multisigAddress, params.userBtcAddress, params.userAmount)
 
-        console.log({ inputs, outputs, fee })
+        console.log({ inputs, outputs })
 
-        const transactions: any[] = await getTxDetails(inputs.map(input => input.txId))
+        const transactions: any[] = await getTxDetails(inputs.map(input => input.txid))
 
         const psbt = new Psbt({ network })
 
         for (let i = 0; i < inputs.length; i++) {
             psbt.addInput({
-                hash: inputs[i].txId,
+                hash: inputs[i].txid,
                 index: inputs[i].vout,
                 nonWitnessUtxo: Buffer.from(transactions[i].hex, 'hex'),
                 redeemScript: payments.p2ms({
@@ -108,7 +118,7 @@ const createPsbtRawHex = async (params: { userBtcAddress: string, userAmount: nu
 
         for (let i = 0; i < outputs.length; i++) {
             psbt.addOutput({
-                address: outputs[i].address || multisigAddress,
+                address: outputs[i].address,
                 value: outputs[i].value
             })
         }

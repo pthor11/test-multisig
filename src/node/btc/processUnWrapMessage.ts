@@ -39,7 +39,7 @@ const processUnWrapMessage = async (msg: UnWrapMessage) => {
         })
 
     } catch (e) {
-        console.error(`btc processUnWrapMessage error. Retrying ...`)
+        console.error(`btc processUnWrapMessage error. Retrying ... ${JSON.stringify(e.response?.data || e.message)}`)
         // processUnWrapMessage(msg)
         throw e
     }

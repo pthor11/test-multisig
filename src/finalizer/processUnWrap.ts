@@ -39,9 +39,9 @@ const processUnWrap = async () => {
             await db.collection(collectionNames.unwraps).updateOne({ trxHash: readyUnWrap.trxHash }, { $set: { btcHash: result } })
         }
 
-        // setTimeout(processUnWrap, sendInterval)
+        setTimeout(processUnWrap, sendInterval)
     } catch (e) {
-        // setTimeout(processUnWrap, sendInterval)
+        setTimeout(processUnWrap, sendInterval)
         console.error(e.response?.data || JSON.stringify(e))
         throw e
     }
