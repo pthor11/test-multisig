@@ -36,7 +36,14 @@ const processUnWrap = async () => {
 
             console.log({ txId: result })
 
-            await db.collection(collectionNames.unwraps).updateOne({ trxHash: readyUnWrap.trxHash }, { $set: { btcHash: result } })
+            await db.collection(collectionNames.unwraps).updateOne({
+                trxHash: readyUnWrap.trxHash
+            }, {
+                $set: {
+                    btcHash: result,
+                    updatedAt: new Date()
+                }
+            })
         }
 
         setTimeout(processUnWrap, sendInterval)
