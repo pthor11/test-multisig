@@ -40,6 +40,7 @@ const processUnWrap = async () => {
                 trxHash: readyUnWrap.trxHash
             }, {
                 $set: {
+                    processed: true,
                     btcHash: result,
                     updatedAt: new Date()
                 }
