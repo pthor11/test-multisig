@@ -22,8 +22,8 @@ const processUnWrapMessage = async (msg: UnWrapMessage) => {
             messages: [{
                 value: JSON.stringify({
                     trxHash: msg.trxHash,
-                    basePsbtHex,
-                    signedPsbtHex
+                    base: basePsbtHex,
+                    signed: signedPsbtHex
                 })
             }]
         })

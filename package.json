@@ -5,8 +5,11 @@
     "scripts": {
         "build": "rm -rf dist && tsc",
         "start:node": "node dist/node/index.js",
+        "start:finalizer": "node dist/finalizer/index.js",
         "dev:node": "ts-node src/node/index.ts",
+        "dev:finalizer": "ts-node src/finalizer/index.ts",
         "dev:node:log": "nodemon --watch 'src/**/*.ts' --exec ts-node src/node/index.ts",
+        "dev:finalizer:log": "nodemon --watch 'src/**/*.ts' --exec ts-node src/finalizer/index.ts",
         "dep:node": "docker-compose -f docker-compose.node.yml up --build --remove-orphans -d",
         "dep:node:log": "docker-compose -f docker-compose.node.yml up --build --remove-orphans",
         "dep:cluster:log": "docker-compose -f docker-compose.cluster.yml up --build --remove-orphans"
