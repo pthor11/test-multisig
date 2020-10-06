@@ -37,6 +37,7 @@
     "dependencies": {
         "@apollo/federation": "^0.20.4",
         "apollo-server": "^2.18.2",
+        "apollo-server-core": "^2.18.2",
         "axios": "^0.20.0",
         "bitcoinjs-lib": "^5.2.0",
         "bs58": "^4.0.1",

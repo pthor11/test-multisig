@@ -1,9 +1,10 @@
 import { port } from "./config";
-import { connectDb} from "./mongo";
+import { connectDb } from "./mongo";
+import { resolvers } from "./resolvers";
+import { typeDefs } from "./typeDefs/schema";
 import { ApolloServer } from "apollo-server";
 import { buildFederatedSchema } from "@apollo/federation";
-import { typeDefs } from "./typeDefs/schema";
-import { resolvers } from "./resolvers";
+import { ApolloServerPluginInlineTraceDisabled } from "apollo-server-core";
 
 const start = async () => {
     try {
@@ -14,6 +15,7 @@ const start = async () => {
                 typeDefs,
                 resolvers
             }]),
+            plugins: [ApolloServerPluginInlineTraceDisabled()],
             context: req => req
         })
 

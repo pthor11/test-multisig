@@ -1,5 +1,6 @@
 import { connect, Db, MongoClient } from "mongodb";
 import { mongoUri } from "./config";
+import { TxIndexes } from "./models/Tx";
 
 export let client: MongoClient
 export let db: Db
@@ -48,7 +49,7 @@ export const connectDb = async () => {
         db = client.db()
 
         await Promise.all([
-            
+            db.collection(collectionNames.txs).createIndexes(TxIndexes)
         ])
 
         console.log(`Mongodb: connected`)
