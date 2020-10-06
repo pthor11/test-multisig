@@ -10,13 +10,9 @@ const startBtc = async() => {
 
         await connectKafkaProducer()
 
-        // await syncTxs()
-        
-        // await connectKafkaProducer()
-        
-        // await connectKafkaConsumer()
+        await syncTxs()
 
-        // await processTx()
+        await processTx()
 
         process.on('message', msg => processUnWrapMessage(msg))
 
