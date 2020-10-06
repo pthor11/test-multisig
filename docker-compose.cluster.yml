@@ -66,3 +66,12 @@ services:
     #   - wrapper-mongo-3
     env_file: .node3.env
     restart: always
+
+
+  wrapper-finalizer:
+    container_name: wrapper-finalizer
+    build:
+      context: .
+      dockerfile: Dockerfile.finalizer
+    env_file: .finalizer.env
+    restart: always

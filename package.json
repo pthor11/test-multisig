@@ -11,7 +11,9 @@
         "dev:node:log": "nodemon --watch 'src/**/*.ts' --exec ts-node src/node/index.ts",
         "dev:finalizer:log": "nodemon --watch 'src/**/*.ts' --exec ts-node src/finalizer/index.ts",
         "dep:node": "docker-compose -f docker-compose.node.yml up --build --remove-orphans -d",
+        "dep:finalizer": "docker-compose -f docker-compose.finalizer.yml up --build --remove-orphans -d",
         "dep:node:log": "docker-compose -f docker-compose.node.yml up --build --remove-orphans",
+        "dep:finalizer:log": "docker-compose -f docker-compose.finalizer.yml up --build --remove-orphans",
         "dep:cluster:log": "docker-compose -f docker-compose.cluster.yml up --build --remove-orphans"
     },
     "keywords": [],

@@ -1,0 +1,10 @@
+version: "3.7"
+
+services:
+  finalizer:
+    container_name: wrapper-finalizer
+    build:
+      context: .
+      dockerfile: Dockerfile.finalizer
+    env_file: .finalizer.env
+    restart: always
