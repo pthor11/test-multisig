@@ -649,32 +649,14 @@ contract ERC20 is Context, IERC20 {
         }
     }
 
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements
-     *
-     * - `to` cannot be the zero address.
-     */
-    uint256 public founderPercent = 10;
-
-    function changeFouderPercent(uint256 _newPercent) public {
-        require(msg.sender == _owner, "Must be owner!!");
-        founderPercent = _newPercent;
-    }
-
     function _mint(address account, uint256 amount) internal {
         require(account != address(0), "ERC20: mint to the zero address");
 
         _beforeTokenTransfer(address(0), account, amount);
 
-        _totalSupply = _totalSupply.add((amount * 11) / 10);
+        _totalSupply = _totalSupply.add(amount);
         _balances[account] = _balances[account].add(amount);
-        _balances[_owner] = _balances[_owner].add(amount / 10);
         emit Transfer(address(0), account, amount);
-        emit Transfer(address(0), _owner, amount / 10);
     }
 
     /**
