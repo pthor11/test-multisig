@@ -1,4 +1,4 @@
-import * as TronWeb from 'tronweb'
+import TronWeb from 'tronweb'
 import { fullNodeUri, solidityNodeUri, eventServerUri, trxPrivateKey } from "../config";
 
 if (!fullNodeUri) throw new Error(`TRX: full node uri invalid`)

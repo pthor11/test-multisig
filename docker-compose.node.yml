@@ -19,5 +19,5 @@ services:
     #   - mongo
     # links:
     #   - mongo
-    env_file: .env
+    env_file: .node.env
     restart: always

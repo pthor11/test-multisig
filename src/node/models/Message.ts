@@ -1,3 +1,9 @@
+type KafkaMessage = {
+    trxHash: string,
+    base: string,
+    signed: string
+}
+
 type WrapMessage = {
     btcHash: string
     btcTime: Date
@@ -13,6 +19,7 @@ type UnWrapMessage = {
 }
 
 export {
+    KafkaMessage,
     WrapMessage,
     UnWrapMessage
 }

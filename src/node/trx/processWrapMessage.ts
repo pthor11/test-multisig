@@ -1,4 +1,4 @@
-import { WrapMessage } from "../models/Message.process";
+import { WrapMessage } from "../models/Message";
 import { triggerFactoryContract } from "./factory.contract";
 
 const processWrapMessage = async (msg: WrapMessage) => {
@@ -11,8 +11,7 @@ const processWrapMessage = async (msg: WrapMessage) => {
 
         console.log({ trxHash })
     } catch (e) {
-        console.error(`trx processWrapMessage error. Retrying ...`)
-        processWrapMessage(msg)
+        console.error(`processWrapMessage: ${JSON.stringify(e)}`)
         throw e
     }
 }

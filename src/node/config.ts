@@ -1,7 +1,19 @@
+import { existsSync } from "fs";
 import { config } from "dotenv";
 import { networks } from "bitcoinjs-lib"
 
-config()
+import { join } from "path";
+
+const path = join(__dirname, `../../.node.env`)
+
+if (existsSync(path)) {
+    config({ path })
+} else {
+    config()
+}
+
+if (!process.env.WRAPPER_AMOUNT_MINIMUM) throw new Error(`wrapper amount minimum must be provided`)
+export const wrapperAmounMinimum = parseInt(process.env.WRAPPER_AMOUNT_MINIMUM)
 
 if (!process.env.MONGO_URI_NODE) throw new Error(`mongo uri node must be provided`)
 export const mongoUri = process.env.MONGO_URI_NODE
@@ -48,7 +60,7 @@ export const contractEvents = {
     Wrap: 'Wrap',
     UnWrap: 'UnWrap'
 }
-export const maxEventReturnSize = 2 //200
+export const maxEventReturnSize = 200
 
 export const eventRequestInterval = 10000
 

@@ -30,16 +30,12 @@ export const blockbookMethods = {
     address: 'address',
     estimatefee: 'estimatefee',
 }
+
+if (!process.env.TRX_FACTORY_ADDRESS) throw new Error(`trx factory contract address must be provided`)
 export const factoryContractAddress = process.env.TRX_FACTORY_ADDRESS
 
-export const fullNodeUri = process.env.TRX_FULL_NODE
-export const solidityNodeUri = process.env.TRX_SOLIDITY_NODE
-export const eventServerUri = process.env.TRX_EVENT_SEVER
-
-export const contractEvents = {
-    Wrap: 'Wrap',
-    UnWrap: 'UnWrap'
-}
+if(!process.env.TRX_FULL_HOST) throw new Error(`trx full host must be provided`)
+export const fullHost = process.env.TRX_FULL_HOST
 
 export const maxEventReturnSize = 2 //200
 

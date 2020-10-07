@@ -2,7 +2,7 @@ import { connectDb } from "../mongo"
 import { connectKafkaProducer } from "./kafka"
 import { processTx } from "./processTx"
 import { syncTxs } from "./syncTxs"
-import { processUnWrapMessage } from "./processUnWrapMessage"
+import { processUnWrapMessage } from "./processUnwrapMessage"
 
 const startBtc = async() => {
     try {

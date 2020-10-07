@@ -1,7 +1,7 @@
-import { multisigAddress } from "../config"
-import { BtcTxProcessStatus } from "../models/BtcTx"
-import { WrapperEvent } from "../models/WrapperEvent"
-import { WrapMessage } from "../models/Message.process"
+import { multisigAddress, wrapperAmounMinimum } from "../config"
+import { WrapTxProcessStatus } from "../models/Tx"
+import { ActionType } from "../models/Action"
+import { WrapMessage } from "../models/Message"
 import { collectionNames, db } from "../mongo"
 import { tronWeb } from "../trx/tronWeb"
 
@@ -16,13 +16,19 @@ const processWrapTx = async (raw: any) => {
 
         const userAmount = parseInt(ouput.value)
 
-        console.log({ raw, userTrxAddress, userAmount, isTrxAddress: tronWeb.isAddress(userTrxAddress) })
+        console.log({ raw: raw.txid, userTrxAddress, userAmount, isTrxAddress: tronWeb.isAddress(userTrxAddress) })
 
-        if (!tronWeb.isAddress(userTrxAddress)) {
-            await db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, {
+        const errors: string[] = []
+
+        if (!tronWeb.isAddress(userTrxAddress)) errors.push(WrapTxProcessStatus.invalidTrxAddress)
+
+        if (userAmount < wrapperAmounMinimum) errors.push(WrapTxProcessStatus.invalidAmount)
+
+        if (errors.length !== 0) {
+            await db.collection(collectionNames.txs).updateOne({ "raw.txid": raw.txid }, {
                 $set: {
                     processed: true,
-                    status: BtcTxProcessStatus.invalidUserTrxAddress,
+                    status: errors,
                     updatedAt: new Date()
                 }
             })
@@ -40,35 +46,37 @@ const processWrapTx = async (raw: any) => {
 
         if (!process.send) throw new Error(`process.send not found to send wrap message`)
 
+        await db.collection(collectionNames.txs).updateOne({ "raw.txid": raw.txid }, {
+            $set: {
+                processed: true,
+                status: WrapTxProcessStatus.sentWrapToTrx,
+                updatedAt: new Date()
+            }
+        })
+
         process.send(wrapMessage)
 
-        await Promise.all([
-            db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, {
-                $set: {
-                    processed: true,
-                    status: BtcTxProcessStatus.sentWrapEventToTrx,
-                    updatedAt: new Date()
-                }
-            }),
-            db.collection(collectionNames.wraps).insertOne({
-                btcHash: raw.txid,
-                btcTime: new Date(raw.blockTime * 1000),
-                userTrxAddress,
-                userAmount,
-                createdAt: new Date()
-            })
-        ])
+        await db.collection(collectionNames.wraps).insertOne({
+            btcHash: raw.txid,
+            btcTime: new Date(raw.blockTime * 1000),
+            userTrxAddress,
+            userAmount,
+            createdAt: new Date()
+        })
+
     } catch (e) {
         throw e
     }
 }
 
-const processUnWrapTx = async (raw: any) => {
+const processUnwrapTx = async (raw: any) => {
     try {
-        await db.collection(collectionNames.btcTxs).updateOne({ "raw.txid": raw.txid }, {
+        await db.collection(collectionNames.txs).updateOne({
+            "raw.txid": raw.txid
+        }, {
             $set: {
                 processed: true,
-                status: 'UnWrap pending ....',
+                type: ActionType.unwrap,
                 updatedAt: new Date()
             }
         })
@@ -79,7 +87,11 @@ const processUnWrapTx = async (raw: any) => {
 
 const processTx = async () => {
     try {
-        const unprocessedTx = await db.collection(collectionNames.btcTxs).findOne({ processed: false }, { sort: { "raw.blockHeight": 1 }, projection: { _id: false, "raw.txid": true, "raw.vin": true, "raw.vout": true, "raw.blockTime": true } })
+        const unprocessedTx = await db.collection(collectionNames.txs).findOne({
+            processed: false
+        }, {
+            sort: { "raw.blockHeight": 1 }
+        })
 
         const raw = unprocessedTx?.raw
 
@@ -87,11 +99,22 @@ const processTx = async () => {
 
         if (!raw) return setTimeout(processTx, 1000)
 
-        const type = raw.vin.find(input => input.isAddress && input.addresses.includes(multisigAddress)) ? WrapperEvent.UnWrap : WrapperEvent.Wrap
+        const type = raw.vin.find(input => input.isAddress && input.addresses.includes(multisigAddress)) ? ActionType.unwrap : ActionType.wrap
 
-        console.log({ raw, type })
+        // console.log({ raw, type })
 
-        type === WrapperEvent.Wrap ? await processWrapTx(raw) : await processUnWrapTx(raw)
+        switch (type) {
+            case ActionType.wrap:
+                await processWrapTx(raw)
+                break;
+        
+            case ActionType.unwrap:
+                await processUnwrapTx(raw)
+                break;
+        
+            default:
+                break;
+        }
 
         setTimeout(processTx, 100)
     } catch (e) {

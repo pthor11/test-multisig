@@ -25,7 +25,7 @@ const updateTxs = async (page: number = 1, _transactions: any[] = [], refTx?: an
     try {
         // console.log({ refTx, page })
 
-        if (!refTx) refTx = await db.collection(collectionNames.btcTxs).findOne({}, { sort: { "raw.blockHeight": -1 }, limit: 1 })
+        if (!refTx) refTx = await db.collection(collectionNames.txs).findOne({}, { sort: { "raw.blockHeight": -1 }, limit: 1 })
 
         // console.log({ refTx })
 
@@ -48,14 +48,22 @@ const updateTxs = async (page: number = 1, _transactions: any[] = [], refTx?: an
 
 const syncTxs = async () => {
     try {
-        const count = await db.collection(collectionNames.btcTxs).estimatedDocumentCount()
+        const count = await db.collection(collectionNames.txs).estimatedDocumentCount()
+
         const txs = count ? await updateTxs() : await getAllTxs()
 
-        if (txs.length > 0) await db.collection(collectionNames.btcTxs).insertMany(txs.reduce((total, tx) => tx.blockHeight !== -1 ? [...total, {
-            processed: false,
-            raw: tx,
-            createdAt: new Date()
-        }] : total, []))
+        const confirmedTxs = txs.filter(tx => tx.blockHeight !== -1).map(tx => {
+            return {
+                processed: false,
+                raw: tx,
+                createdAt: new Date()
+            }
+        })
+
+        if (confirmedTxs.length > 0) {
+            await db.collection(collectionNames.txs).insertMany(confirmedTxs)
+            console.log({ count, txs: confirmedTxs.length })
+        }
 
         setTimeout(syncTxs, 1000)
     } catch (e) {

@@ -1,5 +1,5 @@
 import { tronWeb } from "./tronWeb"
-import { factoryContractAddress } from "../config"
+import { factoryContractAddress, maxEventReturnSize } from "../config"
 import { collectionNames, db } from "../mongo"
 
 const getAllEvents = async (_fingerprint?: string, _events: any[] = []) => {
@@ -7,7 +7,7 @@ const getAllEvents = async (_fingerprint?: string, _events: any[] = []) => {
         const options: {
             fingerprint?: string,
             size: number
-        } = { size: 1 }
+        } = { size: maxEventReturnSize }
 
         if (_fingerprint) options.fingerprint = _fingerprint
 
@@ -24,17 +24,14 @@ const getAllEvents = async (_fingerprint?: string, _events: any[] = []) => {
 
 const updateEvents = async (_fingerprint?: string, _events: any[] = [], refEvent?: any) => {
     try {
-        if (!refEvent) refEvent = await db.collection(collectionNames.trxEvents).findOne({}, { sort: { "raw.block": -1 }, limit: 1 })
+        if (!refEvent) refEvent = await db.collection(collectionNames.events).findOne({}, { sort: { "raw.block": -1 }, limit: 1 })
 
         const options: {
             fingerprint?: string,
             size: number
-        } = { size: 1 }
+        } = { size: maxEventReturnSize }
 
         if (_fingerprint) options.fingerprint = _fingerprint
-
-        // console.log({ _fingerprint, refEvent })
-
 
         const events: any[] = await tronWeb.getEventResult(factoryContractAddress, options)
 
@@ -50,17 +47,21 @@ const updateEvents = async (_fingerprint?: string, _events: any[] = [], refEvent
 
 const syncEvents = async () => {
     try {
-        const count = await db.collection(collectionNames.trxEvents).estimatedDocumentCount()
+        const count = await db.collection(collectionNames.events).estimatedDocumentCount()
 
         const events = count ? await updateEvents() : await getAllEvents()
 
-        if (events.length > 0) await db.collection(collectionNames.trxEvents).insertMany(events.map(event => {
-            return {
-                processed: false,
-                raw: event,
-                createdAt: new Date()
-            }
-        }))
+        if (events.length > 0) {
+            await db.collection(collectionNames.events).insertMany(events.map(event => {
+                return {
+                    processed: false,
+                    raw: event,
+                    createdAt: new Date()
+                }
+            }))
+
+            console.log({ count, events: events.length })
+        }
 
         setTimeout(syncEvents, 1000)
     } catch (e) {
