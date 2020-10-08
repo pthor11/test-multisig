@@ -5,9 +5,13 @@ import { collectionNames, db } from "../mongo"
 const getAllEvents = async (_fingerprint?: string, _events: any[] = []) => {
     try {
         const options: {
+            onlyConfirmed: boolean,
             fingerprint?: string,
             size: number
-        } = { size: maxEventReturnSize }
+        } = {
+            onlyConfirmed: true,
+            size: maxEventReturnSize
+        }
 
         if (_fingerprint) options.fingerprint = _fingerprint
 
@@ -27,9 +31,13 @@ const updateEvents = async (_fingerprint?: string, _events: any[] = [], refEvent
         if (!refEvent) refEvent = await db.collection(collectionNames.events).findOne({}, { sort: { "raw.block": -1 }, limit: 1 })
 
         const options: {
+            onlyConfirmed: boolean,
             fingerprint?: string,
             size: number
-        } = { size: maxEventReturnSize }
+        } = {
+            onlyConfirmed: true,
+            size: maxEventReturnSize
+        }
 
         if (_fingerprint) options.fingerprint = _fingerprint
 
