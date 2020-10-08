@@ -15,9 +15,9 @@ const processUnWrap = async () => {
             }]
         }, { sort: { createdAt: 1 } })
 
-        console.log({ readyUnWrap })
-
         if (readyUnWrap) {
+            console.log({ readyUnWrap })
+
             const basePsbt = Psbt.fromBase64(readyUnWrap.base, { network })
             const signedPsbts = readyUnWrap.signeds.slice(0, 2).map(signed => Psbt.fromBase64(signed, { network }))
 

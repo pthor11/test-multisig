@@ -8,9 +8,9 @@ const processUnWrapMessage = async (msg: UnWrapMessage) => {
     try {
         console.log({ msg })
 
-        // if (!msg.trxHash) throw new Error(`unwrap message has invalid trx hash ${msg}`)
-        // if (!msg.userAmount) throw new Error(`unwrap message has invalid user amount ${msg}`)
-        // if (!msg.userBtcAddress) throw new Error(`unwrap message has invalid user btc address ${msg}`)
+        if (!msg.trxHash) throw new Error(`unwrap message has invalid trx hash ${msg}`)
+        if (!msg.userAmount) throw new Error(`unwrap message has invalid user amount ${msg}`)
+        if (!msg.userBtcAddress) throw new Error(`unwrap message has invalid user btc address ${msg}`)
 
         // // signing message and send to kafka
 
