@@ -13,7 +13,9 @@ const processKafkaMessage = async (payload: EachMessagePayload) => {
 
         console.log({ data })
 
-        await db.collection(collectionNames.unwraps).updateOne({ trxHash: data.trxHash }, {
+        await db.collection(collectionNames.unwraps).updateOne({
+            trxHash: data.trxHash
+        }, {
             $addToSet: { signeds: data.signed },
             $set: { updatedAt: new Date() },
             $setOnInsert: {

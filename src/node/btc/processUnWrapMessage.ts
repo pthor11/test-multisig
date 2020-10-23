@@ -8,10 +8,12 @@ const processUnWrapMessage = async (msg: UnWrapMessage) => {
     try {
         console.log({ msg })
 
-        if (!msg.trxHash) throw new Error(`unwrap message has invalid trx hash ${msg}`)
-        if (!msg.userAmount) throw new Error(`unwrap message has invalid user amount ${msg}`)
-        if (!msg.userBtcAddress) throw new Error(`unwrap message has invalid user btc address ${msg}`)
-
+        await db.collection(collectionNames.unwraps).insertOne({
+            processed: false,
+            ...msg,
+            createdAt: new Date()
+        })
+        
         // // signing message and send to kafka
 
         // const { base, signed } = await createPsbtRawHex(msg)
