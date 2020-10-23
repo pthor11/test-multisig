@@ -21,6 +21,9 @@ export const signatureMinimum = parseInt(process.env.SIGNATURE_MINIMUM)
 if (!process.env.WIFS) throw new Error(`wifs must be provided`)
 export const wifs = process.env.WIFS.split(',')
 
+if (!['legacy', 'segwit'].includes(process.env.SIG_TYPE || '')) throw new Error(`sig type must be legacy or wegwit`)
+export const sigType = process.env.SIG_TYPE
+
 if (!process.env.BLOCKBOOK_API) throw new Error(`blockbook api must be provided`)
 export const blockbookApi = process.env.BLOCKBOOK_API
 

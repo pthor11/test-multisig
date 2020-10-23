@@ -51,16 +51,40 @@ const sendTx = async (params: { receiverAddress: string, receiverValue: number }
         const psbt = new Psbt({ network })
 
         psbt.addInputs(utxos.map((utxo, i) => {
-            return {
+            const isSegwit = txs[i].hex.substring(8, 12) === '0001'
+            console.log({ txid: utxo.txid, isSegwit });
+
+            const input: any = {
                 hash: utxo.txid,
-                index: utxo.vout,
-                nonWitnessUtxo: Buffer.from(txs[i].hex, 'hex'),
-                redeemScript: payments.p2ms({
+                index: utxo.vout
+            }
+
+            if (isSegwit) {
+                const scriptPubkey = txs[i].vout.find(output => output.isAddress && output.addresses.includes(multisigAddress)).hex
+                console.log({ scriptPubkey });
+
+                input.witnessUtxo = {
+                    script: Buffer.from(scriptPubkey, 'hex'),
+                    value: parseInt(utxo.value)
+                }
+
+                input.witnessScript = payments.p2ms({
+                    m: signatureMinimum,
+                    pubkeys: wifs.map(wif => ECPair.fromWIF(wif, network).publicKey),
+                    network
+                }).output
+            } else {
+                input.nonWitnessUtxo = Buffer.from(txs[i].hex, 'hex')
+                input.redeemScript = payments.p2ms({
                     m: signatureMinimum,
                     pubkeys: wifs.map(wif => ECPair.fromWIF(wif, network).publicKey),
                     network
                 }).output
             }
+
+            console.log({ input });
+
+            return input
         }))
 
         psbt.addOutput({
@@ -68,8 +92,12 @@ const sendTx = async (params: { receiverAddress: string, receiverValue: number }
             value: receiverValue
         })
 
+
         for (let i = 0; i < signatureMinimum; i++) {
-            await psbt.signAllInputsAsync(ECPair.fromWIF(wifs[i], network))
+            const wif = wifs[i]
+            console.log({ wif });
+            
+            await psbt.signAllInputsAsync(ECPair.fromWIF(wif, network))
         }
 
         psbt.finalizeAllInputs()
@@ -79,7 +107,7 @@ const sendTx = async (params: { receiverAddress: string, receiverValue: number }
         console.log({ txRawHex });
 
         // const sendResponse = await Axios.get(`${blockbookApi}/sendtx/${txRawHex}`)
-        
+
         const sendResponse = await Axios.post(`${blockbookApi}/sendtx/`, txRawHex)
 
         const txid = sendResponse.data
@@ -88,7 +116,7 @@ const sendTx = async (params: { receiverAddress: string, receiverValue: number }
 
         return txid
     } catch (e) {
-        console.error(e.response.data || e)
+        console.error(e.response?.data || e)
     }
 }
 
